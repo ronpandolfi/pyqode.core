@@ -14,6 +14,8 @@ class GlobalCheckerPanel(Panel):
 
     """
 
+    _use_syntax_theme = True
+
     def __init__(self):
         super(GlobalCheckerPanel, self).__init__()
         self.scrollable = True
@@ -68,13 +70,12 @@ class GlobalCheckerPanel(Panel):
         Pains the messages and the visible area on the panel.
         :param event: paint event infos
         """
-        if self.isVisible():
-            # fill background
-            self._background_brush = QtGui.QBrush(self.editor.background)
-            painter = QtGui.QPainter(self)
-            painter.fillRect(event.rect(), self._background_brush)
-            self._draw_messages(painter)
-            self._draw_visible_area(painter)
+        if not self.isVisible():
+            return
+        Panel.paintEvent(self, event)
+        painter = QtGui.QPainter(self)
+        self._draw_messages(painter)
+        self._draw_visible_area(painter)
 
     def sizeHint(self):
         """

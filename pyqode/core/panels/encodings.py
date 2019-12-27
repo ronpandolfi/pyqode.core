@@ -154,14 +154,9 @@ class EncodingPanel(Panel):
         self.editor.setTextCursor(cursor)
         self.editor.setReadOnly(True)
 
-    def paintEvent(self, event):
-        """ Fills the panel background. """
-        super(EncodingPanel, self).paintEvent(event)
-        if self.isVisible():
-            # fill background
-            painter = QtGui.QPainter(self)
-            self._background_brush = QtGui.QBrush(self._color)
-            painter.fillRect(event.rect(), self._background_brush)
+    @property
+    def _background_brush(self):
+        return QtGui.QBrush(self._color)
 
     def on_install(self, editor):
         super(EncodingPanel, self).on_install(editor)

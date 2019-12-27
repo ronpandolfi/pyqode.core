@@ -35,6 +35,7 @@ class FoldingPanel(Panel):
     trigger_state_changed = QtCore.Signal(QtGui.QTextBlock, bool)
     collapse_all_triggered = QtCore.Signal()
     expand_all_triggered = QtCore.Signal()
+    _use_syntax_theme = True
 
     @property
     def native_look(self):
@@ -292,7 +293,9 @@ class FoldingPanel(Panel):
         """
         c = self._custom_color
         if self._native:
-            c = self.get_system_bck_color()
+            c = self.editor.syntax_highlighter.color_scheme.formats[
+                'highlight'
+            ].background().color()
         grad = QtGui.QLinearGradient(rect.topLeft(),
                                      rect.topRight())
         if sys.platform == 'darwin':
@@ -321,29 +324,6 @@ class FoldingPanel(Panel):
                          QtCore.QPointF(0, 1),
                          rect.bottomLeft() -
                          QtCore.QPointF(0, 1))
-
-    @staticmethod
-    def get_system_bck_color():
-        """
-        Gets a system color for drawing the fold scope background.
-        """
-        def merged_colors(colorA, colorB, factor):
-            maxFactor = 100
-            colorA = QtGui.QColor(colorA)
-            colorB = QtGui.QColor(colorB)
-            tmp = colorA
-            tmp.setRed((tmp.red() * factor) / maxFactor +
-                       (colorB.red() * (maxFactor - factor)) / maxFactor)
-            tmp.setGreen((tmp.green() * factor) / maxFactor +
-                         (colorB.green() * (maxFactor - factor)) / maxFactor)
-            tmp.setBlue((tmp.blue() * factor) / maxFactor +
-                        (colorB.blue() * (maxFactor - factor)) / maxFactor)
-            return tmp
-
-        pal = QtWidgets.QApplication.instance().palette()
-        b = pal.window().color()
-        h = pal.highlight().color()
-        return merged_colors(b, h, 50)
 
     def _draw_fold_indicator(self, top, mouse_over, collapsed, painter):
         """

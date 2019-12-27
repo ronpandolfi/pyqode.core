@@ -12,10 +12,12 @@ class MarginPanel(Panel):
     centered. This is mostly for writing plain text.
     """
 
+    _use_syntax_theme = True
+
     def __init__(self, nchar=80):
 
         super(MarginPanel, self).__init__()
-        self._nchar = 80
+        self._nchar = nchar
 
     def sizeHint(self):
 
@@ -37,7 +39,7 @@ class MarginPanel(Panel):
             self.editor.width()
             - self.editor.fontMetrics().width("_") * self._nchar
         ) / 2 - right_margin - left_margin
-        return QtCore.QSize(margin, 50)
+        return QtCore.QSize(max(0, margin), 50)
 
     def on_install(self, editor):
 

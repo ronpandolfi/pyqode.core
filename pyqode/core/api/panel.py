@@ -20,6 +20,9 @@ class Panel(QtWidgets.QWidget, Mode):
     .. note:: Use enabled to disable panel actions and setVisible to change the
         visibility of the panel.
     """
+
+    _use_syntax_theme = False
+
     class Position(object):
         """
         Enumerates the possible panel positions
@@ -66,10 +69,10 @@ class Panel(QtWidgets.QWidget, Mode):
         #: later (negative values can also be used).
         self.order_in_zone = -1
         self._scrollable = False
-        self._background_brush = None
-        self._foreground_pen = None
         #: Position in the editor (top, left, right, bottom)
         self.position = -1
+        self._cached_background_brush = None
+        self._cached_foreground_pen = None
 
     def on_install(self, editor):
         """
@@ -87,21 +90,70 @@ class Panel(QtWidgets.QWidget, Mode):
         self.setPalette(QtWidgets.QApplication.instance().palette())
         self.setFont(QtWidgets.QApplication.instance().font())
         self.editor.panels.refresh()
-        self._background_brush = QtGui.QBrush(QtGui.QColor(
-            self.palette().window().color()))
-        self._foreground_pen = QtGui.QPen(QtGui.QColor(
-            self.palette().windowText().color()))
+
+    @property
+    def _background_brush(self):
+
+        """
+        Gives the brush that is used to draw the background. The panel can
+        adopt the syntax theme, so that it blends in with the editor, which
+        looks best for example for line numbers, or it can adopt the
+        application theme, which looks best for example for the search panel.
+        The brush is cached for performance.
+        """
+
+        if self._cached_background_brush is not None:
+            return self._cached_background_brush
+        if not self._use_syntax_theme:
+            self._cached_background_brush = QtGui.QBrush(
+                QtGui.QColor(self.palette().window().color())
+            )
+        else:
+            try:
+                self._color_scheme = \
+                    self.editor.syntax_highlighter.color_scheme
+            except AttributeError:
+                # There is no syntax highlighter to adopt the theme from
+                self._use_syntax_theme = False
+                return self._background_brush
+        self._cached_background_brush = \
+            self._color_scheme.formats['background'].background()
+        return self._cached_background_brush
+
+    @property
+    def _foreground_pen(self):
+
+        """
+        Gives the pen that is used to draw the foreground. The panel can
+        adopt the syntax theme, so that it blends in with the editor, which
+        looks best for example for line numbers, or it can adopt the
+        application theme, which looks best for example for the search panel.
+        The pen is cached for performance.
+        """
+
+        if self._cached_foreground_pen is not None:
+            return self._cached_foreground_pen
+        if not self._use_syntax_theme:
+            self._cached_foreground_pen = QtGui.QPen(
+                QtGui.QColor(self.palette().windowText().color())
+            )
+        else:
+            try:
+                self._color_scheme = \
+                    self.editor.syntax_highlighter.color_scheme
+            except AttributeError:
+                # There is no syntax highlighter to adopt the theme from
+                self._use_syntax_theme = False
+                return self._foreground_pen
+        self._cached_foreground_pen = \
+            self._color_scheme.formats['normal'].foreground()
+        return self._cached_foreground_pen
 
     def paintEvent(self, event):
-        # Fills the panel background using QPalette
-        if self.isVisible():
-            # fill background
-            self._background_brush = QtGui.QBrush(QtGui.QColor(
-                self.palette().window().color()))
-            self._foreground_pen = QtGui.QPen(QtGui.QColor(
-                self.palette().windowText().color()))
-            painter = QtGui.QPainter(self)
-            painter.fillRect(event.rect(), self._background_brush)
+
+        if not self.isVisible():
+            return
+        QtGui.QPainter(self).fillRect(event.rect(), self._background_brush)
 
     def setVisible(self, visible):
         """
