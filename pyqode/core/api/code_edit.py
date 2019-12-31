@@ -1088,9 +1088,20 @@ class CodeEdit(QtWidgets.QPlainTextEdit):
                 if sel.cursor.blockNumber() == cursor.blockNumber():
                     if sel.contains_cursor(cursor):
                         sel.signals.clicked.emit(sel)
-        if not event.isAccepted():
-            event.setAccepted(initial_state)
-            super(CodeEdit, self).mousePressEvent(event)
+        if event.isAccepted():
+            return
+        event.setAccepted(initial_state)
+        # When line wrapping is enabled, the cursor is always placed on the
+        # first line. This appears to a bug in Qt, not in PyQode. The
+        # workaround below checks if cursor is actually moved to the target
+        # position. If not, the cursor is explicitly moved to it.
+        target_pos = self.cursorForPosition(event.pos()).positionInBlock()
+        super(CodeEdit, self).mousePressEvent(event)
+        cursor = self.textCursor()
+        actual_pos = cursor.positionInBlock()
+        if target_pos > actual_pos:
+            cursor.movePosition(cursor.Right, n=target_pos - actual_pos)
+            self.setTextCursor(cursor)
 
     def mouseReleaseEvent(self, event):
         """
