@@ -1091,6 +1091,9 @@ class CodeEdit(QtWidgets.QPlainTextEdit):
         if event.isAccepted():
             return
         event.setAccepted(initial_state)
+        if event.button() == QtCore.Qt.RightButton:
+            super(CodeEdit, self).mousePressEvent(event)
+            return
         # When line wrapping is enabled, the cursor is always placed on the
         # first line. This appears to a bug in Qt, not in PyQode. The
         # workaround below checks if cursor is actually moved to the target
