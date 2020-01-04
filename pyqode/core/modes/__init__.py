@@ -8,6 +8,7 @@ from .autoindent import AutoIndentMode
 from .backspace import SmartBackSpaceMode
 from .caret_line_highlight import CaretLineHighlighterMode
 from .case_converter import CaseConverterMode
+from .line_sorter import LineSorterMode
 from .checker import CheckerMode
 from .checker import CheckerMessage
 from .checker import CheckerMessages
@@ -44,6 +45,7 @@ __all__ = [
     'FileWatcherMode',
     'IndenterMode',
     'LineHighlighterMode',
+    'LineSorterMode',
     'OccurrencesHighlighterMode',
     'OutlineMode',
     'PygmentsSH',
