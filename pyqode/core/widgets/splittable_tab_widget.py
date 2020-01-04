@@ -718,12 +718,27 @@ class SplittableTabWidget(QtWidgets.QSplitter):
             self._shortcut = value
             self._action_popup.setShortcut(self._shortcut)
 
+    @property
+    def tab_bar_visible(self):
+        if self.root:
+            return self._tab_bar_visible
+        return self.parent().tab_bar_visible
+
+    @tab_bar_visible.setter
+    def tab_bar_visible(self, visible):
+        self.main_tab_widget.tabBar().setVisible(visible)
+        if self.root:
+            self._tab_bar_visible = visible
+        for splitter in self.child_splitters:
+            splitter.tab_bar_visible = visible
+
     def __init__(self, parent=None, root=True, create_popup=True,
                  qsettings=None):
         super(SplittableTabWidget, self).__init__(parent)
         SplittableTabWidget.tab_widget_klass._detached_window_class = \
             SplittableTabWidget.detached_window_klass
         if root:
+            self._tab_bar_visible = True
             self._action_popup = QtWidgets.QAction(self)
             self._action_popup.setShortcutContext(QtCore.Qt.WindowShortcut)
             self._shortcut = 'Ctrl+T'
@@ -752,6 +767,7 @@ class SplittableTabWidget(QtWidgets.QSplitter):
                 self._on_focus_changed)
         self._uuid = uuid.uuid1()
         self._tabs = []
+        self.main_tab_widget.tabBar().setVisible(self.tab_bar_visible)
 
     def add_context_action(self, action):
         """
