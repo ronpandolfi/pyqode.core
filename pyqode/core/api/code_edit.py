@@ -903,9 +903,16 @@ class CodeEdit(QtWidgets.QPlainTextEdit):
         tc.beginEditBlock()
         if not tc.hasSelection():
             tc.movePosition(tc.StartOfLine)
-            tc.movePosition(tc.Left)
-            tc.movePosition(tc.Right, tc.KeepAnchor)
-            tc.movePosition(tc.EndOfLine, tc.KeepAnchor)
+            if tc.atStart():
+                # If we're already at the start of the document, then we cannot
+                # move to the preceding line to eat up the preceding newline.
+                # So in that case we eat up the following newline.
+                tc.movePosition(tc.EndOfLine, tc.KeepAnchor)
+                tc.movePosition(tc.Right, tc.KeepAnchor)
+            else:
+                tc.movePosition(tc.Left)
+                tc.movePosition(tc.Right, tc.KeepAnchor)
+                tc.movePosition(tc.EndOfLine, tc.KeepAnchor)
             from_selection = False
         else:
             from_selection = True
