@@ -519,7 +519,10 @@ class BaseTabWidget(QtWidgets.QTabWidget):
         if SplittableTabWidget.tab_under_menu == widget:
             SplittableTabWidget.tab_under_menu = None
         if not clones:
-            widget.setParent(None)
+            try:
+                widget.setParent(None)
+            except RuntimeError:
+                pass  # Catches some rare race conditions?
         else:
             try:
                 clones[0].syntax_highlighter.setDocument(document)
