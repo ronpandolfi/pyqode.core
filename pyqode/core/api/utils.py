@@ -1065,17 +1065,40 @@ def get_block_symbol_data(editor, block):
         cursor.movePosition(cursor.StartOfBlock)
         pos = text.find(character, 0)
         cursor.movePosition(cursor.Right, cursor.MoveAnchor, pos)
-
         while pos != -1:
             if not TextHelper(editor).is_comment_or_string(cursor):
                 # skips symbols in string literal or comment
                 info = ParenthesisInfo(pos, character)
                 symbols.append(info)
-            pos = text.find(character, pos + 1)
-            cursor.movePosition(cursor.StartOfBlock)
-            cursor.movePosition(cursor.Right, cursor.MoveAnchor, pos)
+            next_pos = text.find(character, pos + 1)
+            cursor.movePosition(
+                cursor.Right,
+                cursor.MoveAnchor,
+                next_pos - pos
+            )
+            pos = next_pos
         return symbols
+    
+    def quick_list_symbols(editor, block, character):
+        """
+        Retuns  a list of symbols found in the block text. This is a faster
+        version of the function above, to make sure that performance is ok
+        with large blocks.
 
+        :param editor: code edit instance
+        :param block: block to parse
+        :param character: character to look for.
+        """
+        text = block.text()
+        symbols = []
+        pos = text.find(character, 0)
+        while pos != -1:
+            symbols.append(ParenthesisInfo(pos, character))
+            pos = text.find(character, pos + 1)
+        return symbols
+    
+    if block.length() > 100:  # Starts to become sluggish
+        list_symbols = quick_list_symbols
     parentheses = sorted(
         list_symbols(editor, block, '(') + list_symbols(editor, block, ')'),
         key=lambda x: x.position)
