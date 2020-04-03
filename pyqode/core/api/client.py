@@ -252,11 +252,6 @@ class JsonTcpClient(QtNetwork.QTcpSocket):
         comm('connecting to 127.0.0.1:%d', self._port)
         address = QtNetwork.QHostAddress('127.0.0.1')
         self.connectToHost(address, self._port)
-        # Without a timeout, waitForConnected() can freeze the program. This
-        # solution at least prevents that, and shows a warning when a timeout
-        # occurs. It's unclear why this is done only on Mac OS.
-        if sys.platform == 'darwin' and not self.waitForConnected(500):
-            self._on_error(5)
 
     def _on_connected(self):
         comm('connected to backend: %s:%d', self.peerName(), self.peerPort())
