@@ -57,7 +57,7 @@ class CheckerMessage(object):
         return self.status_to_string(self.status)
 
     def __init__(self, description, status, line, text_range=None, icon=None,
-                 color=None, path=None):
+                 color=None, path=None, block=None, underline=False):
         """
         :param description: The message description (used as a tooltip)
         :param status: The status associated with the message.
@@ -83,13 +83,12 @@ class CheckerMessage(object):
         self.text_range = text_range
         #: The color used for the text decoration. If None, the default color
         #: is used (:const:`pyqode.core.CheckerMessage.COLORS`)
-        self.color = color
-        if self.color is None:
-            self.color = self.COLORS[status]
+        self.color = self.COLORS[status] if color is None else color
         self.decoration = None
         self.path = path
         #: store a reference to the associated QTextBlock, for quick acces
-        self.block = None
+        self.block = block
+        self.underline = underline
 
     def __str__(self):
         return "{0} l{1}".format(self.description, self.line)
@@ -146,10 +145,12 @@ class CheckerMode(Mode, QtCore.QObject):
         return self._messages
 
     def __init__(self, worker,
+                 underline=True,
                  delay=500,
                  show_tooltip=True):
         """
         :param worker: The process function or class to call remotely.
+        :param underline: Indicates whether lines should be decorated.
         :param delay: The delay used before running the analysis process when
                       trigger is set to
                       :class:pyqode.core.modes.CheckerTriggers`
@@ -168,6 +169,7 @@ class CheckerMode(Mode, QtCore.QObject):
         self._show_tooltip = show_tooltip
         self._pending_msg = []
         self._finished = True
+        self._underline = underline
 
     def set_ignore_rules(self, rules):
         """
@@ -214,6 +216,7 @@ class CheckerMode(Mode, QtCore.QObject):
         QtCore.QTimer.singleShot(1, self._remove_batch)
 
     def _add_batch(self):
+        
         if self.editor is None:
             return
         for i in range(10):
@@ -241,6 +244,8 @@ class CheckerMode(Mode, QtCore.QObject):
                 tooltip = None
                 if self._show_tooltip:
                     tooltip = message.description
+                if not message.underline:
+                    continue
                 if message.text_range is not None:
                     message.decoration = TextDecoration(
                         self.editor.textCursor(),
@@ -313,9 +318,11 @@ class CheckerMode(Mode, QtCore.QObject):
         :param status: Response status
         :param results: Response data, messages.
         """
+        
         messages = []
         for msg in results:
             msg = CheckerMessage(*msg)
+            msg.underline = self._underline
             if msg.line >= self.editor.blockCount():
                 msg.line = self.editor.blockCount() - 1
             block = self.editor.document().findBlockByNumber(msg.line)
