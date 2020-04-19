@@ -42,6 +42,8 @@ class BreakpointMode(CheckerMode):
     def _request(self):
 
         self._finished = True
+        if self.editor is None:
+            return
         path = self.editor.file.path
         if path not in self._breakpoints:
             return []
