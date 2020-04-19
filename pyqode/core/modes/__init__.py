@@ -26,6 +26,7 @@ from .pygments_sh import PygmentsSH
 from .wordclick import WordClickMode
 from .zoom import ZoomMode
 from .spellchecker_mode import SpellCheckerMode
+from .breakpoint import BreakpointMode
 # for backward compatibility
 from ..api.syntax_highlighter import PYGMENTS_STYLES
 from .pygments_sh import PygmentsSH as PygmentsSyntaxHighlighter
@@ -34,6 +35,7 @@ from .pygments_sh import PygmentsSH as PygmentsSyntaxHighlighter
 __all__ = [
     'AutoCompleteMode',
     'AutoIndentMode',
+    'BreakpointMode',
     'CaretLineHighlighterMode',
     'CaseConverterMode',
     'CheckerMode',
