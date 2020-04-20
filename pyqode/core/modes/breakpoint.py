@@ -16,7 +16,7 @@ class BreakpointMode(CheckerMode):
     breakpoint_toggled = QtCore.Signal(str, int)
     BREAKPOINT_MESSAGE = '[BREAKPOINT]'
     
-    def __init__(self, breakpoints={}, keyboard_shortcut=QtCore.Qt.Key_F12):
+    def __init__(self, breakpoints={}, keyboard_shortcut=None):
         
         CheckerMode.__init__(self, None)
         self._breakpoints = breakpoints
@@ -29,12 +29,14 @@ class BreakpointMode(CheckerMode):
     def on_state_changed(self, state):
         
         if state:
-            self.editor.key_pressed.connect(self._on_key_pressed)
+            if self._keyboard_shortcut:
+                self.editor.key_pressed.connect(self._on_key_pressed)
             self.editor.textChanged.connect(self.request_analysis)
             self.editor.new_text_set.connect(self.clear_messages)
             self.request_analysis()
         else:
-            self.editor.key_pressed.disconnect(self._on_key_pressed)
+            if self._keyboard_shortcut:
+                self.editor.key_pressed.disconnect(self._on_key_pressed)
             self.editor.textChanged.disconnect(self.request_analysis)
             self.editor.new_text_set.disconnect(self.clear_messages)
             self.clear_messages()
@@ -51,7 +53,7 @@ class BreakpointMode(CheckerMode):
         block_count = self.editor.blockCount()
         document = self.editor.document()
         for line in self._breakpoints[path]:
-            if line >= block_count:
+            if line > block_count:
                 oslogger.debug(
                     'breakpoint out of document: {}:{}'.format(path, line)
                 )
@@ -69,10 +71,13 @@ class BreakpointMode(CheckerMode):
     def _on_key_pressed(self, event):
 
         if (
-            self._keyboard_shortcut.matches(event.key()) !=
+            self._keyboard_shortcut.matches(event.key()) ==
             self._keyboard_shortcut.ExactMatch
         ):
-            return
+            self.toggle_breakpoint()
+        
+    def toggle_breakpoint(self):
+        
         line = self.editor.textCursor().blockNumber()
         path = self.editor.file.path
         if path not in self._breakpoints:
