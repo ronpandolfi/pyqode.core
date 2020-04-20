@@ -1513,7 +1513,8 @@ class SplittableCodeEditTabWidget(SplittableTabWidget):
             tab.file.replace_tabs_by_spaces = replace_tabs_by_spaces
             tab.file.autodetect_eol = autodetect_eol
             tab.file.preferred_eol = preferred_eol
-            tab.show_whitespaces = show_whitespaces
+            if show_whitespaces is not None:
+                tab.show_whitespaces = show_whitespaces
             try:
                 tab.file.open(original_path, encoding=encoding)
             except Exception as e:
