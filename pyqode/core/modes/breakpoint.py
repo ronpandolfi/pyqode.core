@@ -2,7 +2,7 @@
 """
 This module contains the breakpoints checker mode
 """
-from qtpy import QtCore, QtGui
+from pyqode.qt import QtCore, QtGui
 from pyqode.core.modes import CheckerMode, CheckerMessage, CheckerMessages
 
 
