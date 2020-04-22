@@ -437,7 +437,16 @@ class CodeCompletionMode(Mode, QtCore.QObject):
         self._current_completion = completion
 
     def _insert_completion(self, completion):
-        cursor = self._helper.word_under_cursor(select_whole_word=False)
+        # If the completions ends with the part of the word that follows the
+        # cursor, then the entire word is replaced. This avoid duplicating
+        # parts of words through autocompletion.
+        trailing_text = self._helper.word_under_cursor(
+            select_whole_word=True,
+            from_start=False
+        ).selectedText()
+        cursor = self._helper.word_under_cursor(
+            select_whole_word=completion.endswith(trailing_text)
+        )
         cursor.insertText(completion)
         self.editor.setTextCursor(cursor)
 

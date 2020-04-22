@@ -183,7 +183,12 @@ class TextHelper(object):
         """
         return self._editor.textCursor().selectedText()
 
-    def word_under_cursor(self, select_whole_word=False, text_cursor=None):
+    def word_under_cursor(
+        self,
+        select_whole_word=False,
+        text_cursor=None,
+        from_start=True
+    ):
         """
         Gets the word under cursor using the separators defined by
         :attr:`pyqode.core.api.CodeEdit.word_separators`.
@@ -197,6 +202,8 @@ class TextHelper(object):
          else the selection stops at the cursor position.
         :param text_cursor: Optional custom text cursor (e.g. from a
             QTextDocument clone)
+        :param from_start: If set to true the word is selected from the start,
+        else from the cursor position.
         :returns: The QTextCursor that contains the selected word.
         """
         editor = self._editor
@@ -205,19 +212,19 @@ class TextHelper(object):
         word_separators = editor.word_separators
         end_pos = start_pos = text_cursor.position()
         # select char by char until we are at the original cursor position.
-        while not text_cursor.atStart():
+        while from_start and not text_cursor.atStart():
             text_cursor.movePosition(
                 text_cursor.Left, text_cursor.KeepAnchor, 1)
             try:
                 char = text_cursor.selectedText()[0]
-                word_separators = editor.word_separators
-                selected_txt = text_cursor.selectedText()
-                if (selected_txt in word_separators and
-                        (selected_txt != "n" and selected_txt != "t") or
-                        char.isspace()):
-                    break  # start boundary found
             except IndexError:
                 break  # nothing selectable
+            word_separators = editor.word_separators
+            selected_txt = text_cursor.selectedText()
+            if (selected_txt in word_separators and
+                    (selected_txt != "\n" and selected_txt != "\t") or
+                    char.isspace()):
+                break  # start boundary found
             start_pos = text_cursor.position()
             text_cursor.setPosition(start_pos)
         if select_whole_word:
@@ -229,7 +236,7 @@ class TextHelper(object):
                 char = text_cursor.selectedText()[0]
                 selected_txt = text_cursor.selectedText()
                 if (selected_txt in word_separators and
-                        (selected_txt != "n" and selected_txt != "t") or
+                        (selected_txt != "\n" and selected_txt != "\t") or
                         char.isspace()):
                     break  # end boundary found
                 end_pos = text_cursor.position()
