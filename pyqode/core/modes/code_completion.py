@@ -572,18 +572,30 @@ class CodeCompletionMode(Mode, QtCore.QObject):
         :return:
         """
         full_prefix = self._helper.word_under_cursor(
-            select_whole_word=False).selectedText()
-        if self._case_sensitive:
-            self._completer.setCaseSensitivity(QtCore.Qt.CaseSensitive)
-        else:
-            self._completer.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
+            select_whole_word=False
+        ).selectedText()
+        full_suffix = self._helper.word_under_cursor(
+            select_whole_word=True,
+            from_start=False
+        ).selectedText()
+        self._completer.setCaseSensitivity(
+            QtCore.Qt.CaseSensitive
+            if self._case_sensitive
+            else QtCore.Qt.CaseInsensitive
+        )
         # set prefix
         self._completer.setCompletionPrefix(self.completion_prefix)
         cnt = self._completer.completionCount()
         selected = self._completer.currentCompletion()
-        if (full_prefix == selected) and cnt == 1:
-            debug('user already typed the only completion that we '
-                            'have')
+        # This is quite a hacky way to avoid completion suggestions for
+        # variations of the current word. So we don't want to complete when
+        # the suffix is already equal to the completion, nor when the
+        # completion starts with the current suffix and ends with the current
+        # suffix with at most a single character in between.
+        if (cnt == 1 and (selected == full_prefix or (
+            selected.endswith(full_suffix)
+            and len(selected) <= len(full_suffix) + len(full_prefix) + 1
+        ))):
             self._hide_popup()
         else:
             # show the completion list
