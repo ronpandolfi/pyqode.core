@@ -249,7 +249,7 @@ class PygmentsSH(SyntaxHighlighter):
         try:
             self._lexer = get_lexer_for_mimetype(mime, **options)
         except (ClassNotFound, ImportError):
-            print('class not found for mime', mime)
+            _logger().debug('class not found for mime {}'.format(mime))
             self._lexer = get_lexer_for_mimetype('text/plain')
         else:
             _logger().debug('lexer for mimetype (%s): %r', mime, self._lexer)
