@@ -228,12 +228,15 @@ class TextHelper(object):
             start_pos = text_cursor.position()
             text_cursor.setPosition(start_pos)
         if select_whole_word:
-            # select the resot of the word
+            # select the rest of the word
             text_cursor.setPosition(end_pos)
             while not text_cursor.atEnd():
                 text_cursor.movePosition(text_cursor.Right,
                                          text_cursor.KeepAnchor, 1)
-                char = text_cursor.selectedText()[0]
+                try:
+                    char = text_cursor.selectedText()[0]
+                except IndexError:
+                    break  # nothing selectable
                 selected_txt = text_cursor.selectedText()
                 if (selected_txt in word_separators and
                         (selected_txt != "\n" and selected_txt != "\t") or
