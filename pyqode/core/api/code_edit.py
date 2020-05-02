@@ -455,7 +455,7 @@ class CodeEdit(QtWidgets.QPlainTextEdit):
         self._word_separators = [
             '~', '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '+', '{',
             '}', '|', ':', '"', "'", "<", ">", "?", ",", ".", "/", ";", '[',
-            ']', '\\', '\n', '\t', '=', '-', ' '
+            ']', '\\', '\n', '\t', '=', '-', ' ', u'\u2029'
         ]
         self._save_on_focus_out = False
         self._use_spaces_instead_of_tabs = True

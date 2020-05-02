@@ -603,13 +603,37 @@ class TextHelper(object):
 
         :param cursor: QTextCursor that defines the position where the search
             will start.
+            
+        :return: A single character or None if the cursor is at the end of the
+            document.
         """
-        next_char = self.get_right_word(cursor=cursor)
-        if len(next_char):
-            next_char = next_char[0]
-        else:
-            next_char = None
-        return next_char
+
+        if cursor is None:
+            cursor = self._editor.textCursor()
+        if cursor.atEnd():
+            return
+        cursor.clearSelection()
+        cursor.movePosition(cursor.Right, cursor.KeepAnchor, 1)
+        return cursor.selectedText()
+
+    def get_left_character(self, cursor=None):
+        """
+        Gets the character that is on the left of the text cursor.
+
+        :param cursor: QTextCursor that defines the position where the search
+            will start.
+            
+        :return: A single character or None if the cursor is at the start of
+            the document.
+        """
+
+        if cursor is None:
+            cursor = self._editor.textCursor()
+        if cursor.atStart():
+            return
+        cursor.clearSelection()
+        cursor.movePosition(cursor.Left, cursor.KeepAnchor, 1)
+        return cursor.selectedText()
 
     def insert_text(self, text, keep_position=True):
         """

@@ -571,44 +571,43 @@ class CodeCompletionMode(Mode, QtCore.QObject):
         :param index: index
         :return:
         """
-        full_prefix = self._helper.word_under_cursor(
-            select_whole_word=False
-        ).selectedText()
-        full_suffix = self._helper.word_under_cursor(
-            select_whole_word=True,
-            from_start=False
-        ).selectedText()
+        
+        # If the cursor is not at the end of the documnet, then we check
+        # whether the next character is a word separator If not, then we don't
+        # offer completions, because we don't want to complete in the middle of
+        # a word.
+        ch = self._helper.get_right_character()  # None means end of document
+        if ch is not None and ch not in self.editor.word_separators:
+            return
+        # Get the word that was typed so far
+        text_cursor = self.editor.textCursor()
+        text_cursor.movePosition(text_cursor.Left, text_cursor.MoveAnchor, 1)
+        text_cursor.select(text_cursor.WordUnderCursor)
+        word_so_far = text_cursor.selectedText()
         self._completer.setCaseSensitivity(
             QtCore.Qt.CaseSensitive
             if self._case_sensitive
             else QtCore.Qt.CaseInsensitive
         )
-        # set prefix
         self._completer.setCompletionPrefix(self.completion_prefix)
-        cnt = self._completer.completionCount()
-        selected = self._completer.currentCompletion()
-        # This is quite a hacky way to avoid completion suggestions for
-        # variations of the current word. So we don't want to complete when
-        # the suffix is already equal to the completion, nor when the
-        # completion starts with the current suffix and ends with the current
-        # suffix with at most a single character in between.
-        if (cnt == 1 and (selected == full_prefix or (
-            selected.endswith(full_suffix)
-            and len(selected) <= len(full_suffix) + len(full_prefix) + 1
-        ))):
-            self._hide_popup()
+        # Move to the first suggestion that is not the current word, and hide
+        # the popup if no such suggestion exists.
+        for row in range(self._completer.completionCount()):
+            self._completer.setCurrentRow(row)
+            if self._completer.currentCompletion() != word_so_far:
+                break
         else:
-            # show the completion list
-            if self.editor.isVisible():
-                if self._completer.widget() != self.editor:
-                    self._completer.setWidget(self.editor)
-                self._completer.complete(self._get_popup_rect())
-                self._completer.popup().setCurrentIndex(
-                    self._completer.completionModel().index(index, 0))
-                debug(
-                    "popup shown: %r" % self._completer.popup().isVisible())
-            else:
-                debug('cannot show popup, editor is not visible')
+            self._hide_popup()
+            return
+        if not self.editor.isVisible():
+            debug('cannot show popup, editor is not visible')
+            return
+        if self._completer.widget() != self.editor:
+            self._completer.setWidget(self.editor)
+        self._completer.complete(self._get_popup_rect())
+        self._completer.popup().setCurrentIndex(
+             self._completer.completionModel().index(row, 0)
+        )
 
     def _show_completions(self, completions):
         debug("showing %d completions" % len(completions))
