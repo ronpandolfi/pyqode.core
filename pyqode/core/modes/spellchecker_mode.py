@@ -6,9 +6,9 @@ from pyqode.core.modes import CheckerMode
 
 
 WARNING = 1
-# Matches all words of at least three characters that are preceded whitespace
-# or opening brackets
-WORD_PATTERN = r'[\s\[\(\{](?P<word>[\w\'][\w\']([\w\']+))'
+# Matches all words of at least three characters that are preceded whitespace,
+# opening brackets, or quotes
+WORD_PATTERN = r'[\s\[\(\{\'"](?P<word>[\w\'][\w\']([\w\']+))'
 
 
 def run_spellcheck(request_data):
@@ -20,7 +20,9 @@ def run_spellcheck(request_data):
     messages = []
     code = request_data['code']
     for group in re.finditer(WORD_PATTERN, code):
-        word = group.group('word')
+        # Strip off starting and trailing quotes. This could probably included
+        # in the regular expression, but this is easier.
+        word = group.group('word').strip('\'"')
         if sc.unknown([word]):
             messages.append((
                 '[spellcheck] {}'.format(word),
