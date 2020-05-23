@@ -94,8 +94,11 @@ class CheckerMessage(object):
         return "{0} l{1}".format(self.description, self.line)
 
     def __eq__(self, other):
-        return (self.block == other.block and
-                self.description == other.description)
+        return (
+            self.text_range == other.text_range and
+            self.block == other.block and
+            self.description == other.description
+        )
 
 
 def _logger(klass):
@@ -162,6 +165,7 @@ class CheckerMode(Mode, QtCore.QObject):
         # max number of messages to keep good performances
         self.limit = 200
         self.ignore_rules = []
+        self._extra_info = {}
         self._job_runner = DelayJobRunner(delay=delay)
         self._messages = []
         self._worker = worker
@@ -179,6 +183,17 @@ class CheckerMode(Mode, QtCore.QObject):
         to reject some warnings/errors.
         """
         self.ignore_rules = rules
+        
+    def add_extra_info(self, key, value):
+        """
+        Allows additional info to be passed onto the linter. Things like the
+        language for spell checking.
+        """
+        self._extra_info[key] = value
+        
+    def get_extra_info(self, key):
+        """Gets additional info for the linter."""
+        return self._extra_info[key]
 
     def add_messages(self, messages):
         """
@@ -359,8 +374,9 @@ class CheckerMode(Mode, QtCore.QObject):
             'path': self.editor.file.path,
             'encoding': self.editor.file.encoding,
             'ignore_rules': self.ignore_rules,
-            'max_line_length': max_line_length,
+            'max_line_length': max_line_length
         }
+        request_data.update(self._extra_info)
         try:
             self.editor.backend.send_request(
                 self._worker, request_data, on_receive=self._on_work_finished)
