@@ -841,11 +841,19 @@ class CodeEdit(QtWidgets.QPlainTextEdit):
         only the last one is duplicated.
         """
         cursor = self.textCursor()
-        assert isinstance(cursor, QtGui.QTextCursor)
-        has_selection = True
+        orig_pos = cursor.position()
         if not cursor.hasSelection():
             cursor.select(cursor.LineUnderCursor)
             has_selection = False
+        else:
+            # Select the full lines, in case one of the lines was only partly
+            # selected. Except when the cursor is at the start of an otherwise
+            # unselected line, because that feels unintuitive.
+            has_selection = True
+            if cursor.atBlockStart():
+                cursor.movePosition(cursor.Left, cursor.KeepAnchor)
+            elif not cursor.atBlockEnd():
+                cursor.movePosition(cursor.EndOfLine, cursor.KeepAnchor)
         line = cursor.selectedText()
         line = '\n'.join(line.split('\u2029'))
         end = cursor.selectionEnd()
@@ -855,9 +863,13 @@ class CodeEdit(QtWidgets.QPlainTextEdit):
         cursor.insertText(line)
         cursor.endEditBlock()
         if has_selection:
+            # Restore the original multiline selection
             pos = cursor.position()
             cursor.setPosition(end + 1)
             cursor.setPosition(pos, cursor.KeepAnchor)
+        else:
+            # Restore the original cursor position, but one line down
+            cursor.setPosition(orig_pos + len(line) + 1)
         self.setTextCursor(cursor)
 
     def indent(self):
