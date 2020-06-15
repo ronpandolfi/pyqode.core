@@ -12,6 +12,7 @@ from .line_sorter import LineSorterMode
 from .checker import CheckerMode
 from .checker import CheckerMessage
 from .checker import CheckerMessages
+from .comments import CommentsMode
 from .cursor_history import CursorHistoryMode
 from .code_completion import CodeCompletionMode
 from .extended_selection import ExtendedSelectionMode
@@ -42,6 +43,7 @@ __all__ = [
     'CheckerMessage',
     'CheckerMessages',
     'CodeCompletionMode',
+    'CommentsMode',
     'CursorHistoryMode',
     'ExtendedSelectionMode',
     'FileWatcherMode',
