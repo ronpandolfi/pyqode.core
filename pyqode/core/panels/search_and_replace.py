@@ -278,6 +278,7 @@ class SearchAndReplacePanel(Panel, Ui_SearchPanel):
             pass
         self.lineEditReplace.clear()
         self.lineEditSearch.clear()
+        self.editor.setFocus()
 
     def _on_key_pressed(self, event):
 
