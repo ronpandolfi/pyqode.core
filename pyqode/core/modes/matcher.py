@@ -124,7 +124,13 @@ class SymbolMatcherMode(Mode):
             self.editor.decorations.remove(deco)
         self._decorations[:] = []
 
-    def symbol_pos(self, cursor, character_type=OPEN, symbol_type=PAREN):
+    def symbol_pos(
+        self,
+        cursor,
+        character_type=OPEN,
+        symbol_type=PAREN,
+        block_position=False
+    ):
         """
         Find the corresponding symbol position (line, column) of the specified
         symbol. If symbol type is PAREN and character_type is OPEN, the
@@ -133,6 +139,8 @@ class SymbolMatcherMode(Mode):
         :param cursor: QTextCursor
         :param character_type: character type to look for (open or close char)
         :param symbol_type: symbol type (index in the SYMBOLS map).
+        :param block_position: indicates if the column of return value should
+            be relative to the block (True) or line (False)
         """
         retval = None, None
         original_cursor = self.editor.textCursor()
@@ -142,7 +150,10 @@ class SymbolMatcherMode(Mode):
         self._match(symbol_type, data, block.position())
         for deco in self._decorations:
             if deco.character == self.SYMBOLS[symbol_type][character_type]:
-                retval = deco.line, deco.column
+                retval = (
+                    deco.line,
+                    deco.block_position if block_position else deco.column
+                )
                 break
         self.editor.setTextCursor(original_cursor)
         self._clear_decorations()
@@ -244,6 +255,7 @@ class SymbolMatcherMode(Mode):
         deco = TextDecoration(cursor, draw_order=10)
         deco.line = cursor.blockNumber()
         deco.column = cursor.columnNumber()
+        deco.block_position = cursor.positionInBlock()
         deco.character = cursor.selectedText()
         deco.match = match
         if match:
