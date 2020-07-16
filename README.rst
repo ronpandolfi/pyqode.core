@@ -18,6 +18,12 @@ when there is no specialised editor for a given language.
 .. _Rapunzel: https://rapunzel.cogsci.nl/
 
 
+License
+-------
+
+pyQode is licensed under the **MIT license**.
+
+
 Requirements
 ------------
 
