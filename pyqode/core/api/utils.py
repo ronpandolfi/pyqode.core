@@ -1078,12 +1078,14 @@ class ParenthesisInfo(object):
         self.character = char
 
 
-def get_block_symbol_data(editor, block):
+def get_block_symbol_data(editor, block, opening=True, closing=True):
     """
     Gets the list of ParenthesisInfo for specific text block.
 
     :param editor: Code edit instance
     :param block: block to parse
+    :param opening: indicates whether opening symbols should be included
+    :param closing: indicates whether closing symbols should be included
     """
     def list_symbols(editor, block, character):
         """
@@ -1133,15 +1135,20 @@ def get_block_symbol_data(editor, block):
     
     if block.length() > 100:  # Starts to become sluggish
         list_symbols = quick_list_symbols
-    parentheses = sorted(
-        list_symbols(editor, block, '(') + list_symbols(editor, block, ')'),
-        key=lambda x: x.position)
-    square_brackets = sorted(
-        list_symbols(editor, block, '[') + list_symbols(editor, block, ']'),
-        key=lambda x: x.position)
-    braces = sorted(
-        list_symbols(editor, block, '{') + list_symbols(editor, block, '}'),
-        key=lambda x: x.position)
+    parentheses = []
+    square_brackets = []
+    braces = []
+    if opening:
+        parentheses += list_symbols(editor, block, '(')
+        square_brackets += list_symbols(editor, block, '[')
+        braces += list_symbols(editor, block, '{')
+    if closing:
+        parentheses += list_symbols(editor, block, ')')
+        square_brackets += list_symbols(editor, block, ']')
+        braces += list_symbols(editor, block, '}')
+    parentheses = sorted(parentheses, key=lambda x: x.position)
+    square_brackets = sorted(square_brackets, key=lambda x: x.position)
+    braces = sorted(braces, key=lambda x: x.position)
     return parentheses, square_brackets, braces
 
 
