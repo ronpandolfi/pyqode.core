@@ -39,7 +39,9 @@ class BackendManager(Manager):
     LAST_PORT = {}
     LAST_PROCESS = {}
     SHARE_COUNT = {}
+    MAX_SHARE_COUNT = 10
     share_id_count = 0
+    HEARTBEAT_INTERVAL = 5000
 
     def __init__(self, editor):
         super(BackendManager, self).__init__(editor)
@@ -50,7 +52,7 @@ class BackendManager(Manager):
         self.args = None
         self._shared = False
         self._heartbeat_timer = QtCore.QTimer()
-        self._heartbeat_timer.setInterval(1000)
+        self._heartbeat_timer.setInterval(BackendManager.HEARTBEAT_INTERVAL)
         self._heartbeat_timer.timeout.connect(self._send_heartbeat)
         self._heartbeat_timer.start()
 
@@ -89,11 +91,26 @@ class BackendManager(Manager):
             you're creating an app which supports multiple programming
             languages you will need to merge all backend scripts into one
             single script, otherwise the wrong script might be picked up).
+        :param share_id: Used to separate different backend types that should
+            be shared, for example for example for different languages. When
+            the maximum number of shares is exceeded, a new backend process is
+            started automatically.
         """
         # If no share id is specified, we generate a new unique share id.
         if share_id is None:
             share_id = 'unique{}'.format(BackendManager.share_id_count)
             BackendManager.share_id_count += 1
+        # Else we suffix the share id with a number, and make sure that no
+        # backend process is shared more than the maximum number of share
+        # counts. This is necessary, because otherwise too many sockets will
+        # interfere with each other.
+        else:
+            i = 1
+            while len(BackendManager.SHARE_COUNT.get(
+                '{}{}'.format(share_id, i), []
+            )) >= BackendManager.MAX_SHARE_COUNT:
+                i += 1
+            share_id = '{}{}'.format(share_id, i)
         self._share_id = share_id
         self._shared = reuse
         self.server_script = script
