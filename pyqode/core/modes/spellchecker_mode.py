@@ -14,6 +14,7 @@ def run_spellcheck(request_data):
 
     import re
     import spellchecker
+    import string
 
     sc = spellchecker.SpellChecker(request_data.get('language', 'en'))
     ignore = request_data.get('ignore', [])
@@ -29,13 +30,20 @@ def run_spellcheck(request_data):
         if word.endswith('__'):
             word = word[:-2]
             end -= 2
-        if word not in ignore and sc.unknown([word]):
-            messages.append((
-                '[spellcheck] {}'.format(word),
-                WARNING,
-                0,
-                (end - len(word), end)
-            ))
+        # Ignore words that start with a digit, that are in the ignore list, or
+        # that are part of the dictionary
+        if (
+            word[0] in string.digits or
+            word in ignore or
+            not sc.unknown([word])
+        ):
+            continue
+        messages.append((
+            '[spellcheck] {}'.format(word),
+            WARNING,
+            0,
+            (end - len(word), end)
+        ))
     return messages
 
 
