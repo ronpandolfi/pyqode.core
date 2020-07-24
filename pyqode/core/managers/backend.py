@@ -4,8 +4,8 @@ This module contains the backend controller
 import logging
 import socket
 import sys
+import string
 from pyqode.qt import QtCore
-
 from pyqode.core.api.client import JsonTcpClient, BackendProcess
 from pyqode.core.api.manager import Manager
 from pyqode.core.backend import NotRunning, echo_worker
@@ -103,8 +103,9 @@ class BackendManager(Manager):
         # Else we suffix the share id with a number, and make sure that no
         # backend process is shared more than the maximum number of share
         # counts. This is necessary, because otherwise too many sockets will
-        # interfere with each other.
-        else:
+        # interfere with each other. If the share id is already suffixed, this
+        # is a restart that should use the original share id.
+        elif share_id[-1] not in string.digits:
             i = 1
             while len(BackendManager.SHARE_COUNT.get(
                 '{}{}'.format(share_id, i), []
@@ -247,7 +248,7 @@ class BackendManager(Manager):
             the results of the worker (object)
         """
         if not self.running:
-            if not BackendManager.SHARE_COUNT[self._share_id]:
+            if not BackendManager.SHARE_COUNT.get(self._share_id, []):
                 comm('not restarting unused share_id: {}'.format(
                     self._share_id)
                 )
