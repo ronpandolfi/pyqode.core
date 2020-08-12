@@ -66,9 +66,9 @@ def readme():
         return DESCRIPTION
     return str(open('README.rst').read())
 
-
+pypi_release = os.environ.get('PYPI_RELEASE', 0)
 setup(
-    name='pyqode.core',
+    name='pyqode3.core' if pypi_release else 'pyqode.core',
     namespace_packages=['pyqode'],
     version=__version__,
     packages=[p for p in find_packages() if 'test' not in p],
