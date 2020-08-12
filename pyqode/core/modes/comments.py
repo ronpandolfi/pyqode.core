@@ -135,6 +135,8 @@ class CommentsMode(api.Mode):
             if cursor.atEnd():
                 cursor.insertText('\n')
             return
-        # Remove the comment comment prefix from the start of the line
-        for _ in self.prefix:
-            cursor.deleteChar()
+        # Remove the comment comment prefix from the start of the line, but
+        # don't remove anything that doesn't match the prefix
+        cursor.movePosition(cursor.Right, cursor.KeepAnchor, len(self.prefix))
+        if cursor.selectedText() == self.prefix:
+            cursor.removeSelectedText()
