@@ -14,6 +14,17 @@ from pyqode.core.api.utils import DelayJobRunner, TextHelper
 from pyqode.core.backend import NotRunning
 from pyqode.core.backend.workers import findall
 
+NAVIGATION_KEYS = (
+    QtCore.Qt.Key_Up,
+    QtCore.Qt.Key_Down,
+    QtCore.Qt.Key_Left,
+    QtCore.Qt.Key_Right,
+    QtCore.Qt.Key_Home,
+    QtCore.Qt.Key_End,
+    QtCore.Qt.Key_PageUp,
+    QtCore.Qt.Key_PageDown,
+)
+
 
 class SearchAndReplacePanel(Panel, Ui_SearchPanel):
     """ Lets the user search and replace text in the current document.
@@ -396,36 +407,7 @@ class SearchAndReplacePanel(Panel, Ui_SearchPanel):
         if self._working:
             QtCore.QTimer.singleShot(100, self.select_next)
             return
-        current_occurence = self._current_occurrence()
-        occurrences = self.get_occurences()
-        if not occurrences:
-            return
-        current = self._occurrences[current_occurence]
-        cursor_pos = self.editor.textCursor().position()
-        if cursor_pos not in range(current[0], current[1] + 1) or \
-                current_occurence == -1:
-            # search first occurrence that occurs after the cursor position
-            current_occurence = 0
-            for i, (start, end) in enumerate(self._occurrences):
-                if end > cursor_pos:
-                    current_occurence = i
-                    break
-        else:
-            if (current_occurence == -1 or
-                    current_occurence >= len(occurrences) - 1):
-                current_occurence = 0
-            else:
-                current_occurence += 1
-        self._set_current_occurrence(current_occurence)
-        try:
-            cursor = self.editor.textCursor()
-            cursor.setPosition(occurrences[current_occurence][0])
-            cursor.setPosition(occurrences[current_occurence][1],
-                               cursor.KeepAnchor)
-            self.editor.setTextCursor(cursor)
-            return True
-        except IndexError:
-            return False
+        return self._select_match(previous=False)
 
     def select_previous(self):
         """
@@ -438,36 +420,75 @@ class SearchAndReplacePanel(Panel, Ui_SearchPanel):
         if self._working:
             QtCore.QTimer.singleShot(100, self.select_previous)
             return
+        return self._select_match(previous=True)
+        
+    def _select_match(self, previous=False):
+        
         current_occurence = self._current_occurrence()
         occurrences = self.get_occurences()
         if not occurrences:
             return
         current = self._occurrences[current_occurence]
-        cursor_pos = self.editor.textCursor().position()
-        if cursor_pos not in range(current[0], current[1] + 1) or \
-                current_occurence == -1:
-            # search first occurrence that occurs before the cursor position
-            current_occurence = len(self._occurrences) - 1
-            for i, (start, end) in enumerate(self._occurrences):
-                if end >= cursor_pos:
-                    current_occurence = i - 1
-                    break
-        else:
-            if (current_occurence == -1 or
-                    current_occurence == 0):
+        cursor = self.editor.textCursor()
+        cursor_pos = cursor.position()
+        if (
+            cursor_pos not in range(current[0], current[1] + 1) or
+            current_occurence == -1
+        ):
+            if previous:
+                # search first occurrence that occurs before the cursor position
+                current_occurence = len(self._occurrences) - 1
+                for i, (start, end) in enumerate(self._occurrences):
+                    if end >= cursor_pos:
+                        current_occurence = i - 1
+                        break
+            else:
+                # search first occurrence that occurs after the cursor position
+                current_occurence = 0
+                for i, (start, end) in enumerate(self._occurrences):
+                    if end > cursor_pos:
+                        current_occurence = i
+                        break
+        elif previous:
+            if (current_occurence == -1 or current_occurence == 0):
                 current_occurence = len(occurrences) - 1
             else:
                 current_occurence -= 1
+        else:
+            if (
+                current_occurence == -1 or
+                current_occurence >= len(occurrences) - 1
+            ):
+                current_occurence = 0
+            else:
+                current_occurence += 1
         self._set_current_occurrence(current_occurence)
         try:
-            cursor = self.editor.textCursor()
-            cursor.setPosition(occurrences[current_occurence][0])
-            cursor.setPosition(occurrences[current_occurence][1],
-                               cursor.KeepAnchor)
-            self.editor.setTextCursor(cursor)
-            return True
+            selection_start = occurrences[current_occurence][0]
+            selection_end = occurrences[current_occurence][1]
         except IndexError:
             return False
+        cursor.setPosition(selection_start)
+        cursor.setPosition(selection_end, cursor.KeepAnchor)
+        self.editor.setTextCursor(cursor)
+        # This is a hack to fix an apparent bug in Qt. The next key press will
+        # reset the cursor to the first line of the block. To fix this, we 
+        # simulate a left keypress, and then move the cursor as far right as
+        # necessary to get it back to the correct position. This seems to work.
+        QtWidgets.QApplication.sendEvent(
+            self.editor,
+            QtGui.QKeyEvent(
+                QtGui.QKeyEvent.KeyPress,
+                QtCore.Qt.Key_Left,
+                QtCore.Qt.NoModifier
+            )
+        )
+        cursor = self.editor.textCursor()
+        actual_pos = cursor.position()
+        if selection_end > actual_pos:
+            cursor.movePosition(cursor.Right, n=selection_end - actual_pos)
+            self.editor.setTextCursor(cursor)
+        return True
 
     def replace(self, text=None):
         """
@@ -530,26 +551,34 @@ class SearchAndReplacePanel(Panel, Ui_SearchPanel):
         cursor.endEditBlock()
 
     def eventFilter(self, obj, event):
-        if event.type() == QtCore.QEvent.KeyPress:
-            if (event.key() == QtCore.Qt.Key_Tab or
-                    event.key() == QtCore.Qt.Key_Backtab):
-                return True
-            elif (event.key() == QtCore.Qt.Key_Return or
-                  event.key() == QtCore.Qt.Key_Enter):
-                if obj == self.lineEditReplace:
-                    if event.modifiers() & QtCore.Qt.ControlModifier:
-                        self.replace_all()
-                    else:
-                        self.replace()
-                elif obj == self.lineEditSearch:
-                    if event.modifiers() & QtCore.Qt.ShiftModifier:
-                        self.select_previous()
-                    else:
-                        self.select_next()
-                return True
-            elif event.key() == QtCore.Qt.Key_Escape:
-                self.on_close()
-        return Panel.eventFilter(self, obj, event)
+        if event.type() != QtCore.QEvent.KeyPress:
+            return Panel.eventFilter(self, obj, event)
+        key = event.key()
+        if key == QtCore.Qt.Key_Tab:
+            self.select_next()
+            return True
+        if key == QtCore.Qt.Key_Backtab:
+            self.select_previous()
+            return True
+        if key in NAVIGATION_KEYS:
+            self.editor.keyPressEvent(event)
+            return True
+        if key in (QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter):
+            if obj == self.lineEditReplace:
+                if event.modifiers() & QtCore.Qt.ControlModifier:
+                    self.replace_all()
+                else:
+                    self.replace()
+            elif obj == self.lineEditSearch:
+                if event.modifiers() & QtCore.Qt.ShiftModifier:
+                    self.select_previous()
+                else:
+                    self.select_next()
+            return True
+        if key == QtCore.Qt.Key_Escape:
+            self.on_close()
+            return True
+        return False
 
     def _search_flags(self):
         """
