@@ -843,7 +843,7 @@ class CodeEdit(QtWidgets.QPlainTextEdit):
         cursor = self.textCursor()
         orig_pos = cursor.position()
         if not cursor.hasSelection():
-            cursor.select(cursor.LineUnderCursor)
+            cursor.select(cursor.BlockUnderCursor)
             has_selection = False
         else:
             # Select the full lines, in case one of the lines was only partly
@@ -851,15 +851,19 @@ class CodeEdit(QtWidgets.QPlainTextEdit):
             # unselected line, because that feels unintuitive.
             has_selection = True
             if cursor.atBlockStart():
-                cursor.movePosition(cursor.Left, cursor.KeepAnchor)
-            elif not cursor.atBlockEnd():
-                cursor.movePosition(cursor.EndOfLine, cursor.KeepAnchor)
-        line = cursor.selectedText()
-        line = '\n'.join(line.split('\u2029'))
+                cursor.movePosition(cursor.Left, cursor.MoveAnchor)
+            start = cursor.selectionStart()
+            end = cursor.selectionEnd()
+            cursor.setPosition(start, cursor.MoveAnchor)
+            cursor.movePosition(cursor.StartOfBlock, cursor.MoveAnchor)
+            cursor.setPosition(end, cursor.KeepAnchor)
+            cursor.movePosition(cursor.EndOfBlock, cursor.KeepAnchor)
+        line = cursor.selectedText().replace('\u2029', '\n')
+        if has_selection:
+          line = '\n' + line
         end = cursor.selectionEnd()
         cursor.setPosition(end)
         cursor.beginEditBlock()
-        cursor.insertText('\n')
         cursor.insertText(line)
         cursor.endEditBlock()
         if has_selection:
@@ -869,7 +873,7 @@ class CodeEdit(QtWidgets.QPlainTextEdit):
             cursor.setPosition(pos, cursor.KeepAnchor)
         else:
             # Restore the original cursor position, but one line down
-            cursor.setPosition(orig_pos + len(line) + 1)
+            cursor.setPosition(orig_pos + len(line))
         self.setTextCursor(cursor)
 
     def indent(self):
