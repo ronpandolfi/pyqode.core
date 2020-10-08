@@ -850,10 +850,10 @@ class CodeEdit(QtWidgets.QPlainTextEdit):
             # selected. Except when the cursor is at the start of an otherwise
             # unselected line, because that feels unintuitive.
             has_selection = True
-            if cursor.atBlockStart():
-                cursor.movePosition(cursor.Left, cursor.MoveAnchor)
             start = cursor.selectionStart()
             end = cursor.selectionEnd()
+            if cursor.atBlockStart():
+                end -= 1
             cursor.setPosition(start, cursor.MoveAnchor)
             cursor.movePosition(cursor.StartOfBlock, cursor.MoveAnchor)
             cursor.setPosition(end, cursor.KeepAnchor)
