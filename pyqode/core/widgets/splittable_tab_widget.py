@@ -1628,7 +1628,8 @@ class SplittableCodeEditTabWidget(SplittableTabWidget):
             SplittableCodeEditTabWidget, self)._on_current_changed(new)
         if new:
             new.dirty_changed.connect(self.dirty_changed.emit)
-        self.dirty_changed.emit(new.dirty)
+        if hasattr(new, 'dirty'):  # Only CodeEdit objects have this property
+            self.dirty_changed.emit(new.dirty)
         return old, new
 
     def split(self, widget, orientation, index=None):
