@@ -918,17 +918,21 @@ class CodeEdit(QtWidgets.QPlainTextEdit):
         tc = self.textCursor()
         tc.beginEditBlock()
         if not tc.hasSelection():
-            tc.movePosition(tc.StartOfLine)
-            if tc.atStart():
-                # If we're already at the start of the document, then we cannot
-                # move to the preceding line to eat up the preceding newline.
-                # So in that case we eat up the following newline.
-                tc.movePosition(tc.EndOfLine, tc.KeepAnchor)
-                tc.movePosition(tc.Right, tc.KeepAnchor)
-            else:
+            # Select the full line
+            tc.movePosition(tc.StartOfBlock)
+            tc.movePosition(tc.EndOfBlock, tc.KeepAnchor)
+            if tc.atEnd():
+                # If we're at the end of the document, select the previous
+                # newline. This will make the cursor jump up, which is why we
+                # don't do it otherwise.
+                tc.movePosition(tc.StartOfBlock)
                 tc.movePosition(tc.Left)
                 tc.movePosition(tc.Right, tc.KeepAnchor)
-                tc.movePosition(tc.EndOfLine, tc.KeepAnchor)
+                tc.movePosition(tc.EndOfBlock, tc.KeepAnchor)
+            else:
+                # Else select the next newline. This will avoid the cursor
+                # from jumping.
+                tc.movePosition(tc.Right, tc.KeepAnchor)
             from_selection = False
         else:
             from_selection = True
