@@ -49,8 +49,16 @@ class AutoCompleteMode(Mode):
         txt = event.text()
         if txt not in self.MAPPING:
             return
-        next_char = self._helper.get_right_character()
         to_insert = self.MAPPING[txt]
+        if to_insert == txt:
+            # For quotes (characters that map onto themselves), we don't
+            # autocomplete if there's already an even number of characters.
+            # This avoids over-autocompleting quotes that are already balanced.
+            cursor = self.editor.textCursor()
+            before_cursor = cursor.block().text()[:cursor.positionInBlock()]
+            if not before_cursor.count(to_insert) % 2:
+                return
+        next_char = self._helper.get_right_character()
         if (not next_char or next_char in self.MAPPING.keys() or
                 next_char in self.MAPPING.values() or
                 next_char.isspace()):
@@ -94,11 +102,11 @@ class AutoCompleteMode(Mode):
                 cursor.beginEditBlock()
                 cursor.movePosition(cursor.Left, cursor.MoveAnchor, 1)
                 cursor.movePosition(cursor.Right, cursor.KeepAnchor, 2)
-                cursor.insertText('')
-                cursor.movePosition(cursor.Left, cursor.MoveAnchor, 1)
+                cursor.deleteChar()
                 cursor.endEditBlock()
                 self.editor.setTextCursor(cursor)
-                ignore = True
+                event.accept()
+                return
         elif (
             # If the next character is already a character that we just
             # autocompleted, then ignore the key press
