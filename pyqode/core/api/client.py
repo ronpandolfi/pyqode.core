@@ -4,6 +4,7 @@ user throught the backend manager (
 :class:`pyqode.core.managers.BackendManager`)
 
 """
+import os
 import locale
 import json
 import logging
@@ -354,6 +355,10 @@ class BackendProcess(QtCore.QProcess):
         self.running = False
         self.starting = True
         self._srv_logger = logging.getLogger('pyqode.backend')
+        if 'PYQODE_BACKEND_LOGGING_LEVEL' in os.environ:
+            self._srv_logger.setLevel(
+                int(os.environ['PYQODE_BACKEND_LOGGING_LEVEL'])
+            )
         self._prevent_logs = False
         self._encoding = locale.getpreferredencoding()
 
