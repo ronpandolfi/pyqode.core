@@ -289,9 +289,11 @@ class CodeCompletionMode(Mode, QtCore.QObject):
         self._filter_mode = self.FILTER_FUZZY
         self._last_cursor_line = -1
         self._last_cursor_column = -1
+        self._last_completion_prefix = ''
         self._tooltips = {}
         self._show_tooltips = False
         self._request_id = self._last_request_id = 0
+        self._working = False
 
     def clone_settings(self, original):
         self.trigger_key = original.trigger_key
@@ -451,6 +453,7 @@ class CodeCompletionMode(Mode, QtCore.QObject):
         self.editor.setTextCursor(cursor)
 
     def _on_results_available(self, results):
+        self._working = False
         debug("completion results (completions=%r), prefix=%s",
                         results, self.completion_prefix)
         context = results[0]
@@ -481,14 +484,21 @@ class CodeCompletionMode(Mode, QtCore.QObject):
         debug('reset sync data and hide popup')
         self._last_cursor_line = -1
         self._last_cursor_column = -1
+        self._last_completion_prefix = ''
         self._hide_popup()
 
     def request_completion(self):
+        if self._working:
+            return
+        self._working = True
         line = self._helper.current_line_nbr()
         column = self._helper.current_column_nbr() - \
             len(self.completion_prefix)
-        same_context = (line == self._last_cursor_line and
-                        column == self._last_cursor_column)
+        same_context = (
+            line == self._last_cursor_line and
+            column == self._last_cursor_column and
+            self.completion_prefix == self._last_completion_prefix
+        )
         if same_context:
             if self._request_id - 1 == self._last_request_id:
                 # context has not changed and the correct results can be
@@ -522,6 +532,7 @@ class CodeCompletionMode(Mode, QtCore.QObject):
                 debug('request sent: %r', data)
                 self._last_cursor_column = column
                 self._last_cursor_line = line
+                self._last_completion_prefix = self.completion_prefix
                 self._request_id += 1
                 return True
 
@@ -550,6 +561,7 @@ class CodeCompletionMode(Mode, QtCore.QObject):
             self._completer.popup().hide()
             self._last_cursor_column = -1
             self._last_cursor_line = -1
+            self._last_completion_prefix = ''
             QtWidgets.QToolTip.hideText()
 
     def _get_popup_rect(self):
