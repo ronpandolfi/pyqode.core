@@ -327,10 +327,10 @@ class CodeCompletionMode(Mode, QtCore.QObject):
         self._completer.highlighted.connect(self._display_completion_tooltip)
 
     def on_install(self, editor):
+        Mode.on_install(self, editor)
         self._create_completer()
         self._completer.setModel(QtGui.QStandardItemModel())
         self._helper = TextHelper(editor)
-        Mode.on_install(self, editor)
 
     def on_uninstall(self):
         Mode.on_uninstall(self)
@@ -614,6 +614,15 @@ class CodeCompletionMode(Mode, QtCore.QObject):
         if not self.editor.isVisible():
             debug('cannot show popup, editor is not visible')
             return
+        # The QCompleter popup doesn't respect the stylesheet. Here we
+        # reconstruct a basic stylesheet and directly apply it. There may be
+        # more elegant solutions, but this works.
+        self._completer.popup().setStyleSheet(
+            '''background: {}; color: {};'''.format(
+                self.editor.palette().base().color().name(),
+                self.editor.palette().text().color().name()
+            )
+        )
         if self._completer.widget() != self.editor:
             self._completer.setWidget(self.editor)
         self._completer.complete(self._get_popup_rect())
