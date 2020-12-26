@@ -29,7 +29,6 @@ def echo_worker(data):
     :param data: Request data dict.
     :returns: True, data
     """
-    print('echo worker running')
     return data
 
 
