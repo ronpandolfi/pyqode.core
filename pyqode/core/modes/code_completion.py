@@ -55,6 +55,8 @@ class SubsequenceSortFilterProxyModel(QtCore.QSortFilterProxyModel):
 
     def filterAcceptsRow(self, row, _):
         completion = self.sourceModel().data(self.sourceModel().index(row, 0))
+        if completion is None or self.prefix is None:
+            return False
         if len(completion) < len(self.prefix):
             return False
         if len(self.prefix) == 1:
