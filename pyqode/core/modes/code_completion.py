@@ -296,6 +296,7 @@ class CodeCompletionMode(Mode, QtCore.QObject):
         self._show_tooltips = False
         self._request_id = self._last_request_id = 0
         self._working = False
+        self._stylesheet_initialized = False
 
     def clone_settings(self, original):
         self.trigger_key = original.trigger_key
@@ -616,18 +617,27 @@ class CodeCompletionMode(Mode, QtCore.QObject):
         if not self.editor.isVisible():
             debug('cannot show popup, editor is not visible')
             return
-        # The QCompleter popup doesn't respect the stylesheet. Here we
-        # reconstruct a basic stylesheet and directly apply it. There may be
-        # more elegant solutions, but this works.
-        self._completer.popup().setStyleSheet(
-            '''background: {}; color: {};'''.format(
-                self.editor.palette().base().color().name(),
-                self.editor.palette().text().color().name()
-            )
-        )
         if self._completer.widget() != self.editor:
             self._completer.setWidget(self.editor)
         self._completer.complete(self._get_popup_rect())
+        # The QCompleter popup doesn't respect the stylesheet. Here we
+        # reconstruct a basic stylesheet and directly apply it. There may be
+        # more elegant solutions, but this works.
+        if not self._stylesheet_initialized:
+            self._completer.popup().setStyleSheet(
+                '''
+                background: {};
+                color: {};
+                font-family: {};
+                font-size: {};
+                '''.format(
+                    self.editor.palette().base().color().name(),
+                    self.editor.palette().text().color().name(),
+                    self.editor.font_name,
+                    self.editor.font_size,
+                )
+            )
+            self._stylesheet_initialized = True
         self._completer.popup().setCurrentIndex(
              self._completer.completionModel().index(row, 0)
         )
