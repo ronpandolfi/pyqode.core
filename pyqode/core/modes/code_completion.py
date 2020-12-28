@@ -587,7 +587,7 @@ class CodeCompletionMode(Mode, QtCore.QObject):
         :return:
         """
         
-        # If the cursor is not at the end of the documnet, then we check
+        # If the cursor is not at the end of the document, then we check
         # whether the next character is a word separator If not, then we don't
         # offer completions, because we don't want to complete in the middle of
         # a word.
