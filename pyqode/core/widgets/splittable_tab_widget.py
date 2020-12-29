@@ -219,8 +219,8 @@ class BaseTabWidget(QtWidgets.QTabWidget):
         if self._try_close_dirty_tabs():
             while self.count():
                 widget = self.widget(0)
-                self.remove_tab(0)
                 self.tab_closed.emit(widget)
+                self.remove_tab(0)
             return True
         return False
 
