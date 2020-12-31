@@ -411,7 +411,7 @@ class CodeCompletionMode(Mode, QtCore.QObject):
             if event.text() in self._trigger_symbols:
                 # symbol trigger, force request
                 self._reset_sync_data()
-                self.request_completion()
+                self.request_completion(triggered_by_symbol=True)
             elif len(word) >= self._trigger_len and event.text() not in \
                     self.editor.word_separators:
                 # Length trigger
@@ -490,7 +490,7 @@ class CodeCompletionMode(Mode, QtCore.QObject):
         self._last_completion_prefix = ''
         self._hide_popup()
 
-    def request_completion(self):
+    def request_completion(self, triggered_by_symbol=False):
         if self._working:
             return
         self._working = True
@@ -522,7 +522,8 @@ class CodeCompletionMode(Mode, QtCore.QObject):
                 'path': self.editor.file.path,
                 'encoding': self.editor.file.encoding,
                 'prefix': self.completion_prefix,
-                'request_id': self._request_id
+                'request_id': self._request_id,
+                'triggered_by_symbol': triggered_by_symbol
             }
             try:
                 self.editor.backend.send_request(

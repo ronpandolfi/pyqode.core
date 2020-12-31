@@ -65,7 +65,8 @@ class CodeCompletionWorker(object):
 
         """
 
-        def complete(self, code, line, column, path, encoding, prefix):
+        def complete(self, code, line, column, path,
+                     encoding, prefix, triggered_by_symbol):
             """
             Returns a list of completions.
 
@@ -82,6 +83,8 @@ class CodeCompletionWorker(object):
             :param path: file path
             :param encoding: file encoding
             :param prefix: completion prefix (text before cursor)
+            :param triggered_by_symbol: True if the completion was triggered
+                by typing a completion character such as '.'
 
             :returns: A list of completion dicts as described above.
             :rtype: list
@@ -100,11 +103,19 @@ class CodeCompletionWorker(object):
         encoding = data['encoding']
         prefix = data['prefix']
         req_id = data['request_id']
+        triggered_by_symbol = data['triggered_by_symbol']
         completions = []
         for prov in CodeCompletionWorker.providers:
             try:
                 results = prov.complete(
-                    code, line, column, path, encoding, prefix)
+                    code,
+                    line,
+                    column,
+                    path,
+                    encoding,
+                    prefix,
+                    triggered_by_symbol
+                )
                 completions.append(results)
                 if len(completions):
                     break
