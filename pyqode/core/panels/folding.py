@@ -10,7 +10,18 @@ from pyqode.core.api import TextBlockHelper, folding, TextDecoration, \
 from pyqode.core.api.folding import FoldScope
 from pyqode.core.api.panel import Panel
 from pyqode.qt import QtCore, QtWidgets, QtGui, PYQT5_API
-from pyqode.core.api.utils import TextHelper, drift_color, keep_tc_pos
+from pyqode.core.api.utils import TextHelper, drift_color
+
+NAVIGATION_KEYS = (
+    QtCore.Qt.Key_Up,
+    QtCore.Qt.Key_Down,
+    QtCore.Qt.Key_Left,
+    QtCore.Qt.Key_Right,
+    QtCore.Qt.Key_Home,
+    QtCore.Qt.Key_End,
+    QtCore.Qt.Key_PageUp,
+    QtCore.Qt.Key_PageDown,
+)
 
 
 def _logger():
@@ -621,37 +632,16 @@ class FoldingPanel(Panel):
 
     def _on_key_pressed(self, event):
         """
-        Override key press to select the current scope if the user wants
-        to deleted a folded scope (without selecting it).
+        Override key press so that folded blocks are unfolded when they are
+        edited. This avoids inconsistencies when the edits actually change the
+        fold structure.
         """
-        delete_request = event.key() in [QtCore.Qt.Key_Backspace,
-                                         QtCore.Qt.Key_Delete]
-        if event.text() or delete_request:
-            cursor = self.editor.textCursor()
-            if cursor.hasSelection():
-                # change selection to encompass the whole scope.
-                positions_to_check = cursor.selectionStart(), cursor.selectionEnd()
-            else:
-                positions_to_check = (cursor.position(), )
-            for pos in positions_to_check:
-                block = self.editor.document().findBlock(pos)
-                th = TextBlockHelper()
-                if th.is_fold_trigger(block) and th.is_collapsed(block):
-                    self.toggle_fold_trigger(block)
-                    if delete_request and cursor.hasSelection():
-                        scope = FoldScope(self.find_parent_scope(block))
-                        tc = TextHelper(self.editor).select_lines(*scope.get_range())
-                        if tc.selectionStart() > cursor.selectionStart():
-                            start = cursor.selectionStart()
-                        else:
-                            start = tc.selectionStart()
-                        if tc.selectionEnd() < cursor.selectionEnd():
-                            end = cursor.selectionEnd()
-                        else:
-                            end = tc.selectionEnd()
-                        tc.setPosition(start)
-                        tc.setPosition(end, tc.KeepAnchor)
-                        self.editor.setTextCursor(tc)
+        
+        if event.key() in NAVIGATION_KEYS:
+            return
+        block = self.editor.textCursor().block()
+        if TextBlockHelper.is_collapsed(block) or not block.isVisible():
+            self._on_action_toggle()
 
     @staticmethod
     def _show_previous_blank_lines(block):
