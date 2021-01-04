@@ -134,6 +134,20 @@ class FoldDetector(object):
         """
         raise NotImplementedError
 
+    def require_rehighlight(self, from_block, to_block):
+        """
+        Indicates whether the entire document should be rehighlighted by the
+        syntax highlighter. This can be necessary in case a block is edited in
+        such a way that it changes the folding structure throughout the
+        document.
+        
+        :param from_block: The block before a key press. This is a block
+            number, block text tuple.
+        :param to_block: The block after a key press. This is a block
+            number, block text tuple.
+        """
+        return False
+    
 
 class IndentFoldDetector(FoldDetector):
     """

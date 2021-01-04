@@ -156,6 +156,10 @@ class FoldingPanel(Panel):
                         # this should never happen since we're working with
                         # clones
                         pass
+                    
+    @property
+    def fold_detector(self):
+        return self.editor.syntax_highlighter.fold_detector
 
     def __init__(self, highlight_caret_scope=False):
         Panel.__init__(self)
@@ -168,6 +172,7 @@ class FoldingPanel(Panel):
         )
         self._custom_color = QtGui.QColor('gray')
         self._block_nbr = -1
+        self._from_block = None
         self._highlight_caret = False
         self.highlight_caret_scope = highlight_caret_scope
         self._indic_size = 16
@@ -617,6 +622,7 @@ class FoldingPanel(Panel):
         """
         if state:
             self.editor.key_pressed.connect(self._on_key_pressed)
+            self.editor.key_released.connect(self._on_key_released)
             if self._highlight_caret:
                 self.editor.cursorPositionChanged.connect(
                     self._highlight_caret_scope)
@@ -624,6 +630,7 @@ class FoldingPanel(Panel):
             self.editor.new_text_set.connect(self._clear_block_deco)
         else:
             self.editor.key_pressed.disconnect(self._on_key_pressed)
+            self.editor.key_released.disconnect(self._on_key_released)
             if self._highlight_caret:
                 self.editor.cursorPositionChanged.disconnect(
                     self._highlight_caret_scope)
@@ -640,8 +647,21 @@ class FoldingPanel(Panel):
         if event.key() in NAVIGATION_KEYS:
             return
         block = self.editor.textCursor().block()
-        if TextBlockHelper.is_collapsed(block) or not block.isVisible():
+        if (
+            TextBlockHelper.is_collapsed(block) or
+            not block.isVisible()
+        ):
             self._on_action_toggle()
+        self._from_block = block.blockNumber(), block.text()
+    
+    def _on_key_released(self, event):
+        
+        block = self.editor.textCursor().block()
+        if self.fold_detector and self.fold_detector.require_rehighlight(
+            self._from_block,
+            (block.blockNumber(), block.text())
+        ):
+            self.editor.syntax_highlighter.rehighlight()
 
     @staticmethod
     def _show_previous_blank_lines(block):
