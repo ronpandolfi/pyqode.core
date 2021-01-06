@@ -12,6 +12,7 @@ from .folding import FoldingPanel
 from .search_and_replace import SearchAndReplacePanel
 from .global_checker import GlobalCheckerPanel
 from .read_only import ReadOnlyPanel
+from .image_annotations import ImageAnnotationsPanel
 
 
 __all__ = [
@@ -24,5 +25,6 @@ __all__ = [
     'SearchAndReplacePanel',
     'GlobalCheckerPanel',
     'ReadOnlyPanel',
-    'MarginPanel'
+    'MarginPanel',
+    'ImageAnnotationsPanel'
 ]

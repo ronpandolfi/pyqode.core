@@ -3,6 +3,7 @@
 This module contains the checker mode, a base class for code checker modes.
 """
 import logging
+from pyqode.core import icons
 from pyqode.core.api import TextBlockUserData
 from pyqode.core.api.decoration import TextDecoration
 from pyqode.core.api.mode import Mode
@@ -57,7 +58,8 @@ class CheckerMessage(object):
         return self.status_to_string(self.status)
 
     def __init__(self, description, status, line, text_range=None, icon=None,
-                 color=None, path=None, block=None, underline=False):
+                 color=None, path=None, block=None, underline=False,
+                 checker_mode=None):
         """
         :param description: The message description (used as a tooltip)
         :param status: The status associated with the message.
@@ -89,6 +91,7 @@ class CheckerMessage(object):
         #: store a reference to the associated QTextBlock, for quick acces
         self.block = block
         self.underline = underline
+        self.checker_mode = checker_mode
 
     def __str__(self):
         return "{0} l{1}".format(self.description, self.line)
@@ -99,6 +102,18 @@ class CheckerMessage(object):
             self.block == other.block and
             self.description == other.description
         )
+        
+    def icon(self):
+        return self.checker_mode.message_icon(self)
+        
+    def tooltip(self):
+        return self.checker_mode.message_tooltip(self)
+        
+    def show_on_panel(self, panel):
+        return self.checker_mode.show_on_panel(panel)
+        
+    def clicked(self, event):
+        self.checker_mode.message_clicked(self, event)
 
 
 def _logger(klass):
@@ -174,7 +189,34 @@ class CheckerMode(Mode, QtCore.QObject):
         self._pending_msg = []
         self._finished = True
         self._underline = underline
-
+        self.info_icon = icons.icon(
+            'dialog-info', ':pyqode-icons/rc/dialog-info.png',
+            'fa.info-circle', qta_options={'color': '#4040DD'})
+        self.warning_icon = icons.icon(
+            'dialog-warning', ':pyqode-icons/rc/dialog-warning.png',
+            'fa.exclamation-triangle', qta_options={'color': '#DDDD40'})
+        self.error_icon = icons.icon(
+            'dialog-error', ':pyqode-icons/rc/dialog-error.png',
+            'fa.exclamation-circle', qta_options={'color': '#DD4040'})
+        self._checker_icons = {
+            CheckerMessages.INFO: self.info_icon,
+            CheckerMessages.WARNING: self.warning_icon,
+            CheckerMessages.ERROR: self.error_icon
+        }
+        self.info_icon = icons.icon(
+            'dialog-info', ':pyqode-icons/rc/dialog-info.png',
+            'fa.info-circle', qta_options={'color': '#4040DD'})
+        self.warning_icon = icons.icon(
+            'dialog-warning', ':pyqode-icons/rc/dialog-warning.png',
+            'fa.exclamation-triangle', qta_options={'color': '#DDDD40'})
+        self.error_icon = icons.icon(
+            'dialog-error', ':pyqode-icons/rc/dialog-error.png',
+            'fa.exclamation-circle', qta_options={'color': '#DD4040'})
+        self._checker_icons = {
+            CheckerMessages.INFO: self.info_icon,
+            CheckerMessages.WARNING: self.warning_icon,
+            CheckerMessages.ERROR: self.error_icon
+        }
     def set_ignore_rules(self, rules):
         """
         Sets the ignore rules for the linter.
@@ -201,7 +243,6 @@ class CheckerMode(Mode, QtCore.QObject):
 
         :param messages: A list of messages or a single message
         """
-        # remove old messages
         if len(messages) > self.limit:
             messages = messages[:self.limit]
         _logger(self.__class__).log(5, 'adding %s messages' % len(messages))
@@ -290,9 +331,6 @@ class CheckerMode(Mode, QtCore.QObject):
 
         :param message: Message to remove
         """
-        import time
-        _logger(self.__class__).log(5, 'removing message %s' % message)
-        t = time.time()
         usd = message.block.userData()
         if usd:
             try:
@@ -307,13 +345,8 @@ class CheckerMode(Mode, QtCore.QObject):
         """
         Clears all messages.
         """
-        while len(self._messages):
-            msg = self._messages.pop(0)
-            usd = msg.block.userData()
-            if usd and hasattr(usd, 'messages'):
-                usd.messages[:] = []
-            if msg.decoration:
-                self.editor.decorations.remove(msg.decoration)
+        while self._messages:
+            self.remove_message(self._messages[0])
 
     def on_state_changed(self, state):
         if state:
@@ -338,6 +371,7 @@ class CheckerMode(Mode, QtCore.QObject):
         for msg in results:
             msg = CheckerMessage(*msg)
             msg.underline = self._underline
+            msg.checker_mode = self
             if msg.line >= self.editor.blockCount():
                 msg.line = self.editor.blockCount() - 1
             block = self.editor.document().findBlockByNumber(msg.line)
@@ -384,3 +418,15 @@ class CheckerMode(Mode, QtCore.QObject):
         except NotRunning:
             # retry later
             QtCore.QTimer.singleShot(100, self._request)
+    
+    def message_icon(self, msg):
+        return self._checker_icons[msg.status]
+        
+    def message_tooltip(self, msg):
+        return msg.description
+
+    def show_on_panel(self, panel):
+        return panel.__class__.__name__ == 'CheckerPanel'
+
+    def message_clicked(self, msg, event):
+        pass

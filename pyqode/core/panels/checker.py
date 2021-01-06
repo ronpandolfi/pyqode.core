@@ -5,10 +5,8 @@ Checker panels:
     - GlobalCheckerPanel: draw all checker markers as colored rectangle to
       offer a global view of all errors
 """
-from pyqode.core import icons
-from pyqode.core.api import DelayJobRunner, TextHelper, CodeEdit
-from pyqode.core.api.panel import Panel, _logger
-from pyqode.core.modes.checker import CheckerMessages
+from pyqode.core.api import DelayJobRunner, TextHelper
+from pyqode.core.api.panel import Panel
 from pyqode.qt import QtCore, QtGui, QtWidgets
 
 
@@ -23,17 +21,7 @@ class CheckerPanel(Panel):
         self.scrollable = True
         self._job_runner = DelayJobRunner(delay=100)
         self.setMouseTracking(True)
-        #: Info icon
-        self.info_icon = icons.icon(
-            'dialog-info', ':pyqode-icons/rc/dialog-info.png',
-            'fa.info-circle', qta_options={'color': '#4040DD'})
-        self.warning_icon = icons.icon(
-            'dialog-warning', ':pyqode-icons/rc/dialog-warning.png',
-            'fa.exclamation-triangle', qta_options={'color': '#DDDD40'})
-        self.error_icon = icons.icon(
-            'dialog-error', ':pyqode-icons/rc/dialog-error.png',
-            'fa.exclamation-circle', qta_options={'color': '#DD4040'})
-
+    
     def marker_for_line(self, line):
         """
         Returns the marker that is displayed at the specified line number if
@@ -46,9 +34,10 @@ class CheckerPanel(Panel):
         """
         block = self.editor.document().findBlockByNumber(line)
         try:
-            return block.userData().messages
+            messages = block.userData().messages
         except AttributeError:
             return []
+        return [msg for msg in messages if msg.show_on_panel(self)]
 
     def sizeHint(self):
         """
@@ -67,44 +56,52 @@ class CheckerPanel(Panel):
     def paintEvent(self, event):
         super(CheckerPanel, self).paintEvent(event)
         painter = QtGui.QPainter(self)
+        message_count = 0
         for top, block_nbr, block in self.editor.visible_blocks:
             user_data = block.userData()
-            if user_data and user_data.messages:
-                for msg in user_data.messages:
-                    icon = self._icon_from_message(msg)
-                    if icon:
-                        rect = QtCore.QRect()
-                        rect.setX(0)
-                        rect.setY(top)
-                        rect.setWidth(self.sizeHint().width())
-                        rect.setHeight(self.sizeHint().height())
-                        icon.paint(painter, rect)
-
-    def _icon_from_message(self, message):
-        icons = {
-            CheckerMessages.INFO: self.info_icon,
-            CheckerMessages.WARNING: self.warning_icon,
-            CheckerMessages.ERROR: self.error_icon
-        }
-        return icons[message.status]
+            if not user_data or not user_data.messages:
+                continue
+            for msg in user_data.messages:
+                if not msg.show_on_panel(self):
+                    continue
+                icon = msg.icon()
+                if not icon:
+                    continue
+                rect = QtCore.QRect()
+                rect.setX(0)
+                rect.setY(top)
+                rect.setSize(icon.actualSize(self.sizeHint()))
+                icon.paint(painter, rect)
+                message_count += 1
+        self._message_count(message_count)
 
     def mouseMoveEvent(self, event):
         # Requests a tooltip if the cursor is currently over a marker.
         line = TextHelper(self.editor).line_nbr_from_position(event.pos().y())
-        if line:
-            markers = self.marker_for_line(line)
-            text = '\n'.join([marker.description for marker in markers if
-                              marker.description])
-            if len(markers):
-                if self._previous_line != line:
-                    top = TextHelper(self.editor).line_pos_from_number(
-                        markers[0].line)
-                    if top:
-                        self._job_runner.request_job(self._display_tooltip,
-                                                     text, top)
-            else:
-                self._job_runner.cancel_requests()
-            self._previous_line = line
+        if line < 0:
+            return
+        markers = self.marker_for_line(line)
+        if markers:
+            tooltips = [marker.tooltip() for marker in markers]
+            if self._previous_line != line:
+                ypos = TextHelper(self.editor).line_pos_from_number(
+                    markers[0].line
+                )
+                self._job_runner.request_job(
+                    self._display_tooltip,
+                    '<br />\n'.join(tooltips),
+                    ypos
+                )
+        else:
+            self._job_runner.cancel_requests()
+        self._previous_line = line
+        
+    def mousePressEvent(self, event):
+        line = TextHelper(self.editor).line_nbr_from_position(event.pos().y())
+        if line < 0:
+            return
+        for marker in self.marker_for_line(line):
+            marker.clicked(event) 
 
     def leaveEvent(self, *args):
         """
@@ -119,3 +116,6 @@ class CheckerPanel(Panel):
         """
         QtWidgets.QToolTip.showText(self.mapToGlobal(QtCore.QPoint(
             self.sizeHint().width(), top)), tooltip, self)
+
+    def _message_count(self, n):
+        pass

@@ -27,6 +27,7 @@ from .pygments_sh import PygmentsSH
 from .wordclick import WordClickMode
 from .zoom import ZoomMode
 from .spellchecker_mode import SpellCheckerMode
+from .image_annotations import ImageAnnotationsMode
 from .breakpoint import BreakpointMode
 # for backward compatibility
 from ..api.syntax_highlighter import PYGMENTS_STYLES
@@ -48,6 +49,7 @@ __all__ = [
     'ExtendedSelectionMode',
     'FileWatcherMode',
     'IndenterMode',
+    'ImageAnnotationsMode',
     'LineHighlighterMode',
     'LineSorterMode',
     'OccurrencesHighlighterMode',
@@ -57,7 +59,9 @@ __all__ = [
     'PYGMENTS_STYLES',
     'RightMarginMode',
     'SmartBackSpaceMode',
+    'SpellCheckerMode',
     'SymbolMatcherMode',
     'WordClickMode',
     'ZoomMode',
+    
 ]
