@@ -11,7 +11,7 @@ from pyqode.core.backend.workers import (
     set_image_annotations
 )
 
-TOOLTIP = '<img style="background-color:white; max-width:100px;" src="{}" />'
+TOOLTIP = '<img style="background-color:white;" src="{}" />'
 
 
 class ImageAnnotationsMode(CheckerMode):
