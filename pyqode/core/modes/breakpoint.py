@@ -54,16 +54,14 @@ class BreakpointMode(CheckerMode):
         document = self.editor.document()
         for line in self._breakpoints[path]:
             if line > block_count:
-                oslogger.debug(
-                    'breakpoint out of document: {}:{}'.format(path, line)
-                )
                 continue
             msg = CheckerMessage(
                 description=self.BREAKPOINT_MESSAGE,
                 status=CheckerMessages.INFO,
                 line=line,
                 block=document.findBlockByNumber(line),
-                underline=False
+                underline=False,
+                checker_mode=self
             )
             messages.append(msg)
         self.add_messages(messages)
