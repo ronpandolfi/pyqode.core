@@ -860,7 +860,7 @@ class CodeEdit(QtWidgets.QPlainTextEdit):
             cursor.movePosition(cursor.EndOfBlock, cursor.KeepAnchor)
         line = cursor.selectedText().replace('\u2029', '\n')
         if has_selection or not line.startswith('\n'):
-          line = '\n' + line
+            line = '\n' + line
         end = cursor.selectionEnd()
         cursor.setPosition(end)
         cursor.beginEditBlock()
