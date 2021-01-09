@@ -2,7 +2,7 @@
 """
 This module contains the symbol matcher mode
 """
-from pyqode.core.api import get_block_symbol_data
+from pyqode.core.api import get_block_symbol_data, utils
 from pyqode.core.api.decoration import TextDecoration
 from pyqode.core.api.mode import Mode
 from pyqode.qt import QtGui
@@ -118,6 +118,8 @@ class SymbolMatcherMode(Mode):
         self._match_foreground = QtGui.QColor('red')
         self._unmatch_background = QtGui.QBrush(QtGui.QColor('transparent'))
         self._unmatch_foreground = QtGui.QColor('red')
+        self._open_symbols = [s[OPEN] for s in self.SYMBOLS.values()]
+        self._close_symbols = [s[CLOSE] for s in self.SYMBOLS.values()]
 
     def _clear_decorations(self):
         for deco in self._decorations:
@@ -179,21 +181,20 @@ class SymbolMatcherMode(Mode):
 
     def _match(self, symbol, data, cursor_pos):
         symbols = data[symbol]
+        cursor = self.editor.textCursor()
+        block = cursor.block()
+        pos = cursor.positionInBlock()
         for i, info in enumerate(symbols):
-            pos = (self.editor.textCursor().position() -
-                   self.editor.textCursor().block().position())
             if info.character == self.SYMBOLS[symbol][OPEN] and \
                     info.position == pos:
                 self._create_decoration(
                     cursor_pos + info.position,
-                    self._match_left(
-                        symbol, self.editor.textCursor().block(), i + 1, 0))
+                    self._match_left(symbol, block, i + 1, 0))
             elif info.character == self.SYMBOLS[symbol][CLOSE] and \
                     info.position == pos - 1:
                 self._create_decoration(
                     cursor_pos + info.position,
-                    self._match_right(
-                        symbol, self.editor.textCursor().block(), i - 1, 0))
+                    self._match_right(symbol, block, i - 1, 0))
 
     def _match_left(self, symbol, current_block, i, cpt):
         while current_block.isValid():
@@ -242,17 +243,27 @@ class SymbolMatcherMode(Mode):
         Performs symbols matching.
         """
         self._clear_decorations()
-        current_block = self.editor.textCursor().block()
+        th = utils.TextHelper(self.editor)
+        if (
+            th.get_left_character() not in self._close_symbols and
+            th.get_right_character() not in self._open_symbols
+        ):
+            return
+        cursor = self.editor.textCursor()
+        current_block = cursor.block()
         data = get_block_symbol_data(self.editor, current_block)
-        pos = self.editor.textCursor().block().position()
+        pos = current_block.position()
         for symbol in [PAREN, SQUARE, BRACE]:
             self._match(symbol, data, pos)
 
     def _create_decoration(self, pos, match=True):
         cursor = self.editor.textCursor()
-        cursor.setPosition(pos)
-        cursor.movePosition(cursor.NextCharacter, cursor.KeepAnchor)
-        deco = TextDecoration(cursor, draw_order=10)
+        deco = TextDecoration(
+            cursor,
+            start_pos=pos,
+            end_pos=pos + 1,
+            draw_order=10
+        )
         deco.line = cursor.blockNumber()
         deco.column = cursor.columnNumber()
         deco.block_position = cursor.positionInBlock()
