@@ -280,48 +280,47 @@ class CheckerMode(Mode, QtCore.QObject):
                 # all pending message added
                 self._finished = True
                 _logger(self.__class__).log(5, 'finished')
+                self.editor.decorations.set_on_editor()
                 self.editor.repaint()
                 return False
             message = self._pending_msg.pop(0)
-            if message.line >= 0:
-                try:
-                    usd = message.block.userData()
-                except AttributeError:
-                    message.block = self.editor.document().findBlockByNumber(message.line)
-                    usd = message.block.userData()
-                if usd is None:
-                    usd = TextBlockUserData()
-                    message.block.setUserData(usd)
-                # check if the same message already exists
-                if message in usd.messages:
-                    continue
-                self._messages.append(message)
-                usd.messages.append(message)
-                tooltip = None
-                if self._show_tooltip:
-                    tooltip = message.description
-                if not message.underline:
-                    continue
-                if message.text_range is not None:
-                    message.decoration = TextDecoration(
-                        self.editor.textCursor(),
-                        start_pos=message.text_range[0],
-                        end_pos=message.text_range[1],
-                        tooltip=tooltip,
-                        draw_order=3
-                    )
-                else:
-                    message.decoration = TextDecoration(
-                        self.editor.textCursor(),
-                        start_line=message.line,
-                        tooltip=tooltip,
-                        draw_order=3
-                    )
-                    message.decoration.set_full_width()
-                message.decoration.set_as_error(color=QtGui.QColor(
-                    message.color))
-                self.editor.decorations.append(message.decoration)
+            if message.line < 0:
+                continue
+            usd = message.block.userData()
+            if usd is None:
+                usd = TextBlockUserData()
+                message.block.setUserData(usd)
+            # check if the same message already exists
+            if message in usd.messages:
+                continue
+            self._messages.append(message)
+            usd.messages.append(message)
+            tooltip = None
+            if self._show_tooltip:
+                tooltip = message.description
+            if not message.underline:
+                continue
+            start_pos, end_pos = (
+                message.text_range
+                if message.text_range is not None
+                else (None, None)
+            )
+            message.decoration = TextDecoration(
+                self.editor.textCursor(),
+                start_line=message.line,
+                start_pos=start_pos,
+                end_pos=end_pos,
+                tooltip=tooltip,
+                draw_order=3,
+                full_width=start_pos is None
+            )
+            message.decoration.set_as_error(color=QtGui.QColor(message.color))
+            self.editor.decorations.append(
+                message.decoration,
+                set_on_editor=False
+            )
         QtCore.QTimer.singleShot(1, self._add_batch)
+        self.editor.decorations.set_on_editor()
         self.editor.repaint()
         return True
 

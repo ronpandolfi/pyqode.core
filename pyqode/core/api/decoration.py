@@ -38,10 +38,11 @@ class TextDecoration(QtWidgets.QTextEdit.ExtraSelection):
         """
         Creates a text decoration.
 
-        .. note:: start_pos/end_pos and start_line/end_line pairs let you
-            easily specify the selected text. You should use one pair or the
-            other or they will conflict between each others. If you don't
-            specify any values, the selection will be based on the cursor.
+        .. note:: The start_pos is relative to the start of the document if
+            start_line is not specified, and relative to the start of the line
+            if it is. The end_pos is relative to the end_line if it is
+            specified, to the start_line if it is specified (but end_line is
+            not), and the start of the document otherwise.
 
         :param cursor_or_bloc_or_doc: Reference to a valid
             QTextCursor/QTextBlock/QTextDocument
@@ -64,24 +65,46 @@ class TextDecoration(QtWidgets.QTextEdit.ExtraSelection):
         self.cursor = QtGui.QTextCursor(cursor_or_bloc_or_doc)
         if full_width:
             self.set_full_width(full_width)
-        if start_pos is not None:
-            self.cursor.setPosition(start_pos)
-        if end_pos is not None:
-            self.cursor.setPosition(end_pos, QtGui.QTextCursor.KeepAnchor)
+        self.cursor.movePosition(self.cursor.Start, self.cursor.MoveAnchor)
         if start_line is not None:
-            self.cursor.movePosition(self.cursor.Start, self.cursor.MoveAnchor)
-            self.cursor.movePosition(self.cursor.Down, self.cursor.MoveAnchor,
-                                     start_line)
+            self.cursor.movePosition(
+                self.cursor.NextBlock,
+                self.cursor.MoveAnchor,
+                start_line
+            )
+            if start_pos is not None:
+                self.cursor.movePosition(
+                    self.cursor.NextCharacter,
+                    self.cursor.MoveAnchor,
+                    start_pos
+                )
+        elif start_pos is not None:
+            self.cursor.setPosition(start_pos, self.cursor.MoveAnchor)
         if end_line is not None:
-            self.cursor.movePosition(self.cursor.Down, self.cursor.KeepAnchor,
-                                     end_line - start_line)
+            self.cursor.movePosition(
+                self.cursor.NextBlock,
+                self.cursor.KeepAnchor,
+                end_line - start_line
+            )
+        if start_line is not None or end_line is not None:
+            if end_pos is not None:
+                self.cursor.movePosition(
+                    self.cursor.NextCharacter,
+                    self.cursor.KeepAnchor,
+                    end_pos - self.cursor.positionInBlock()
+                )
+        elif end_pos is not None:
+            self.cursor.setPosition(end_pos, self.cursor.KeepAnchor)
 
-    def contains_cursor(self, cursor):
+    def contains_cursor(self, cursor, margin=0):
         """
         Checks if the textCursor is in the decoration
 
         :param cursor: The text cursor to test
         :type cursor: QtGui.QTextCursor
+        :param margin: A margin to match also cursor that are just next to
+            the decoration.
+        :type margin: int
 
         :returns: True if the cursor is over the selection
         """
@@ -89,7 +112,7 @@ class TextDecoration(QtWidgets.QTextEdit.ExtraSelection):
         end = self.cursor.selectionEnd()
         if cursor.atBlockEnd():
             end -= 1
-        return start <= cursor.position() <= end
+        return start - margin <= cursor.position() <= end + margin
 
     def set_as_bold(self):
         """ Uses bold text """

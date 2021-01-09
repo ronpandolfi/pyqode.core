@@ -19,7 +19,7 @@ def run_spellcheck(request_data):
     sc = spellchecker.SpellChecker(request_data.get('language', 'en'))
     ignore = request_data.get('ignore', [])
     messages = []
-    code = request_data['code']    
+    code = request_data['code']
     for group in re.finditer(WORD_PATTERN, code):
         # Strip off starting and trailing underscores. This could probably
         # be included in the regular expression, but this is easier.
@@ -38,11 +38,15 @@ def run_spellcheck(request_data):
             not sc.unknown([word])
         ):
             continue
+        # Convert the position to a line number and a start and end position
+        # in the line.
+        line_nr = code[:end].count('\n')
+        line_pos = code[:end].rfind('\n') + 1
         messages.append((
             '[spellcheck] {}'.format(word),
             WARNING,
-            0,
-            (end - len(word), end)
+            line_nr,
+            (end - len(word) - line_pos, end - line_pos)
         ))
     return messages
 

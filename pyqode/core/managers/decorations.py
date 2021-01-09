@@ -14,11 +14,26 @@ class TextDecorationsManager(Manager):
     Manages the collection of TextDecoration that have been set on the editor
     widget.
     """
+    
     def __init__(self, editor):
         super(TextDecorationsManager, self).__init__(editor)
         self._decorations = []
+        self.editor.textChanged.connect(self._remove_decoration_around_cursor)
+        
+    def _remove_decoration_around_cursor(self):
+        """Removes the decorations around the cursor. This is necessary when
+        the text changes, because otherwise the decorations get dragged along
+        with the cursor during typing.
+        """
+        cursor = self.editor.textCursor()
+        to_remove = [
+            d for d in self._decorations
+            if d.contains_cursor(cursor, margin=1)
+        ]
+        for decoration in to_remove:
+            self.remove(decoration)
 
-    def append(self, decoration):
+    def append(self, decoration, set_on_editor=True):
         """
         Adds a text decoration on a CodeEdit instance
 
@@ -29,9 +44,16 @@ class TextDecorationsManager(Manager):
             self._decorations.append(decoration)
             self._decorations = sorted(
                 self._decorations, key=lambda sel: sel.draw_order)
-            self.editor.setExtraSelections(self._decorations)
+            if set_on_editor:
+                self.editor.setExtraSelections(self._decorations)
             return True
         return False
+    
+    def set_on_editor(self):
+        """Sets the decorations on the editor. We don't do this after each
+        decoration (but after each batch) to improve performance.
+        """
+        self.editor.setExtraSelections(self._decorations)
 
     def remove(self, decoration):
         """
