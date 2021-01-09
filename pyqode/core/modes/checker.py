@@ -100,7 +100,8 @@ class CheckerMessage(object):
         return (
             self.text_range == other.text_range and
             self.block == other.block and
-            self.description == other.description
+            self.description == other.description and
+            self.path == other.path
         )
         
     def icon(self):
@@ -217,6 +218,7 @@ class CheckerMode(Mode, QtCore.QObject):
             CheckerMessages.WARNING: self.warning_icon,
             CheckerMessages.ERROR: self.error_icon
         }
+        
     def set_ignore_rules(self, rules):
         """
         Sets the ignore rules for the linter.

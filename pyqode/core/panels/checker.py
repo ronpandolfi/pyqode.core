@@ -61,6 +61,7 @@ class CheckerPanel(Panel):
             user_data = block.userData()
             if not user_data or not user_data.messages:
                 continue
+            offset = 0
             for msg in user_data.messages:
                 if not msg.show_on_panel(self):
                     continue
@@ -69,9 +70,10 @@ class CheckerPanel(Panel):
                     continue
                 rect = QtCore.QRect()
                 rect.setX(0)
-                rect.setY(top)
+                rect.setY(top + offset)
                 rect.setSize(icon.actualSize(self.sizeHint()))
                 icon.paint(painter, rect)
+                offset += rect.height() // 2
                 message_count += 1
         self._message_count(message_count)
 
@@ -101,7 +103,8 @@ class CheckerPanel(Panel):
         if line < 0:
             return
         for marker in self.marker_for_line(line):
-            marker.clicked(event) 
+            marker.clicked(event)
+            break
 
     def leaveEvent(self, *args):
         """

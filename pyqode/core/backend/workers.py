@@ -256,7 +256,7 @@ def findall(data):
         whole_word=data['whole_word'], case_sensitive=data['case_sensitive']))
 
 
-_image_annotations = {} 
+_image_annotations = {}
 
 
 def _meaningful_code(code):
@@ -272,17 +272,18 @@ def image_annotations(data):
     """Returns a list of image annotations."""
     haystack = _meaningful_code(data['code'])
     ret_val = []
-    for needle, path in _image_annotations.get(data['path'], {}).items():
-        if not os.path.exists(path):
-            continue
-        prev_pos = 0
-        while True:
-            pos = haystack.find(_meaningful_code(needle), prev_pos)
-            if pos < 0:
-                break
-            prev_pos = pos + 1
-            line = haystack[:pos].count('\n')
-            ret_val.append(('Image', 0, line, None, None, None, path))
+    for needle, paths in _image_annotations.get(data['path'], {}).items():
+        for path in paths:
+            if not os.path.exists(path):
+                continue
+            prev_pos = 0
+            while True:
+                pos = haystack.find(_meaningful_code(needle), prev_pos)
+                if pos < 0:
+                    break
+                prev_pos = pos + 1
+                line = haystack[:pos].count('\n')
+                ret_val.append(('Image', 0, line, None, None, None, path))
     return ret_val
 
 
