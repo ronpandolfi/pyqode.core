@@ -16,7 +16,7 @@ A worker is always tightly coupled with its caller, so are the data.
     python2, which might happen in pyqode.python to support python2 syntax).
 
 """
-import logging
+import os
 import re
 import sys
 import traceback
@@ -273,6 +273,8 @@ def image_annotations(data):
     haystack = _meaningful_code(data['code'])
     ret_val = []
     for needle, path in _image_annotations.get(data['path'], {}).items():
+        if not os.path.exists(path):
+            continue
         prev_pos = 0
         while True:
             pos = haystack.find(_meaningful_code(needle), prev_pos)
