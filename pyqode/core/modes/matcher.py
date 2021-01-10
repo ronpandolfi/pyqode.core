@@ -264,9 +264,9 @@ class SymbolMatcherMode(Mode):
             end_pos=pos + 1,
             draw_order=10
         )
-        deco.line = cursor.blockNumber()
-        deco.column = cursor.columnNumber()
-        deco.block_position = cursor.positionInBlock()
+        deco.line = deco.cursor.blockNumber()
+        deco.column = deco.cursor.columnNumber()
+        deco.block_position = deco.cursor.positionInBlock()
         deco.match = match
         if match:
             deco.set_foreground(self._match_foreground)
