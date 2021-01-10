@@ -22,7 +22,10 @@ USE_QTAWESOME = False
 #: to setup those options at startup (i.e. before you create any icon).
 QTA_OPTIONS = {
     'color': '',
-    'color_disabled': ''
+    'color_disabled': '',
+    'color_info': '#4040DD',
+    'color_warning': '#DDDD40',
+    'color_error': '#DD4040'
 }
 
 

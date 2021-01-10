@@ -11,6 +11,8 @@ from pyqode.qt import QtCore
 
 class ImageAnnotationsPanel(CheckerPanel):
     
+    _adjust_vertical_offset = False
+    
     def __init__(self):
         self._shown_size_hint = QtCore.QSize(256, 256)
         self._hidden_size_hint = QtCore.QSize(1, 1)
@@ -19,6 +21,15 @@ class ImageAnnotationsPanel(CheckerPanel):
     
     def sizeHint(self):
         return self._size_hint
+    
+    def _icon_size(self):
+        return self.sizeHint()
+    
+    def _multiple_markers_icon(self):
+        return
+    
+    def _vertical_offset(self):
+        return 0
 
     def _message_count(self, n):
         # When there are annotations, the size hint of the panel is changed so

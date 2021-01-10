@@ -167,7 +167,7 @@ class SearchAndReplacePanel(Panel, Ui_SearchPanel):
         icon_size = QtCore.QSize(16, 16)
 
         icon = icons.icon('edit-find', ':/pyqode-icons/rc/edit-find.png',
-                          'fa.s    earch')
+                          'fa.search')
         self.actionSearch.setIcon(icon)
         self.actionSearch.setShortcut('Ctrl+F')
         self.labelSearch.setPixmap(icon.pixmap(icon_size))
