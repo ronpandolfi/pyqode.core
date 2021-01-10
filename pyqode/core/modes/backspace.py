@@ -23,7 +23,8 @@ class SmartBackSpaceMode(Mode):
     def _on_key_pressed(self, event):
         if (
             event.key() != Qt.Key_Backspace or
-            event.modifiers() != Qt.NoModifier
+            event.modifiers() != Qt.NoModifier or
+            event.isAccepted()
         ):
             return
         cursor = self.editor.textCursor()
