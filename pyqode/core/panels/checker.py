@@ -120,7 +120,7 @@ class CheckerPanel(Panel):
                 )
                 self._job_runner.request_job(
                     self._display_tooltip,
-                    '<br />\n'.join(tooltips),
+                    '<pre>{}</pre>'.format('\n'.join(tooltips)),
                     ypos
                 )
         else:
