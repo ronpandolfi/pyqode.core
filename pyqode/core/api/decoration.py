@@ -2,6 +2,7 @@
 This module contains the text decoration API.
 
 """
+from pyqode.core import icons
 from pyqode.qt import QtWidgets, QtCore, QtGui
 
 
@@ -173,43 +174,51 @@ class TextDecoration(QtWidgets.QTextEdit.ExtraSelection):
             self.cursor.clearSelection()
         self.format.setProperty(QtGui.QTextFormat.FullWidthSelection, flag)
 
-    def set_as_underlined(self, color=QtCore.Qt.blue):
+    def set_as_underlined(self, color=None):
         """
         Underlines the text
 
         :param color: underline color.
         """
+        if color is None:
+            color = QtGui.QColor(icons.QTA_OPTIONS['color_info'])
         self.format.setUnderlineStyle(
             QtGui.QTextCharFormat.SingleUnderline)
         self.format.setUnderlineColor(color)
 
-    def set_as_spell_check(self, color=QtCore.Qt.blue):
+    def set_as_spell_check(self, color=None):
         """ Underlines text as a spellcheck error.
 
         :param color: Underline color
         :type color: QtGui.QColor
         """
+        if color is None:
+            color = QtGui.QColor(icons.QTA_OPTIONS['color_info'])
         self.format.setUnderlineStyle(
             QtGui.QTextCharFormat.SpellCheckUnderline)
         self.format.setUnderlineColor(color)
 
-    def set_as_error(self, color=QtCore.Qt.red):
+    def set_as_error(self, color=None):
         """ Highlights text as a syntax error.
 
         :param color: Underline color
         :type color: QtGui.QColor
         """
+        if color is None:
+            color = QtGui.QColor(icons.QTA_OPTIONS['color_error'])
         self.format.setUnderlineStyle(
             QtGui.QTextCharFormat.WaveUnderline)
         self.format.setUnderlineColor(color)
 
-    def set_as_warning(self, color=QtGui.QColor("orange")):
+    def set_as_warning(self, color=None):
         """
         Highlights text as a syntax warning
 
         :param color: Underline color
         :type color: QtGui.QColor
         """
+        if color is None:
+            color = QtGui.QColor(icons.QTA_OPTIONS['color_warning'])
         self.format.setUnderlineStyle(
             QtGui.QTextCharFormat.WaveUnderline)
         self.format.setUnderlineColor(color)

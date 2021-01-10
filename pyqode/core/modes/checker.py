@@ -29,10 +29,6 @@ class CheckerMessage(object):
     Holds data for a message displayed by the
     :class:`pyqode.core.modes.CheckerMode`.
     """
-    #: Default colors foreach message status
-    COLORS = {CheckerMessages.INFO: "#4040DD",
-              CheckerMessages.WARNING: "#DDDD40",
-              CheckerMessages.ERROR: "#DD4040"}
 
     @classmethod
     def status_to_string(cls, status):
@@ -83,9 +79,14 @@ class CheckerMessage(object):
         #: The start column (used for the text decoration). If the col is None,
         #: the whole line is highlighted.
         self.text_range = text_range
-        #: The color used for the text decoration. If None, the default color
-        #: is used (:const:`pyqode.core.CheckerMessage.COLORS`)
-        self.color = self.COLORS[status] if color is None else color
+        self.color = (
+            color if color is not None
+            else icons.QTA_OPTIONS['color_info']
+            if status == CheckerMessages.INFO
+            else icons.QTA_OPTIONS['color_warning']
+            if status == CheckerMessages.WARNING
+            else icons.QTA_OPTIONS['color_error']
+        )
         self.decoration = None
         self.path = path
         #: store a reference to the associated QTextBlock, for quick acces
@@ -192,13 +193,16 @@ class CheckerMode(Mode, QtCore.QObject):
         self._underline = underline
         self.info_icon = icons.icon(
             'dialog-info', ':pyqode-icons/rc/dialog-info.png',
-            'fa.info-circle', qta_options={'color': icons.QTA_OPTIONS['color_info']})
+            'fa.info-circle',
+            qta_options={'color': icons.QTA_OPTIONS['color_info']})
         self.warning_icon = icons.icon(
             'dialog-warning', ':pyqode-icons/rc/dialog-warning.png',
-            'fa.exclamation-triangle', qta_options={'color': icons.QTA_OPTIONS['color_warning']})
+            'fa.exclamation-triangle',
+            qta_options={'color': icons.QTA_OPTIONS['color_warning']})
         self.error_icon = icons.icon(
             'dialog-error', ':pyqode-icons/rc/dialog-error.png',
-            'fa.exclamation-circle', qta_options={'color': icons.QTA_OPTIONS['color_error']})
+            'fa.exclamation-circle',
+            qta_options={'color': icons.QTA_OPTIONS['color_error']})
         self._checker_icons = {
             CheckerMessages.INFO: self.info_icon,
             CheckerMessages.WARNING: self.warning_icon,
