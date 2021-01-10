@@ -267,7 +267,6 @@ class SymbolMatcherMode(Mode):
         deco.line = cursor.blockNumber()
         deco.column = cursor.columnNumber()
         deco.block_position = cursor.positionInBlock()
-        deco.character = cursor.selectedText()
         deco.match = match
         if match:
             deco.set_foreground(self._match_foreground)

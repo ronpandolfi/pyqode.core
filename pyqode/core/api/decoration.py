@@ -95,6 +95,7 @@ class TextDecoration(QtWidgets.QTextEdit.ExtraSelection):
                 )
         elif end_pos is not None:
             self.cursor.setPosition(end_pos, self.cursor.KeepAnchor)
+        self.character = self.cursor.selectedText()
 
     def contains_cursor(self, cursor, margin=0):
         """
