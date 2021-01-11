@@ -261,8 +261,10 @@ _image_annotations = {}
 
 def _meaningful_code(code):
     """Strips code of comments and trailing whitespace. This avoids image
-    annotations from vanishing after trivial changes to the code.
+    annotations from vanishing after trivial changes to the code. Markdown
+    images (# ![]) are preserverd because they are part of captured output.
     """
+    code = code.replace('# ![]', '![]')
     code = re.sub(r'(?m)#.*\n?', '\n', code)
     code = '\n'.join([line.rstrip() for line in code.splitlines()])
     return code
