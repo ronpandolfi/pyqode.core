@@ -84,8 +84,12 @@ class SmartBackSpaceMode(Mode):
                     # However, this means that we are not de-indenting, and
                     # therefore we break out of the loop. In other words, this
                     # is a regular backspace.
-                    elif not i:
-                        cursor.removeSelectedText()
+                    else:
+                        if not i:
+                            cursor.removeSelectedText()
+                        else:
+                            cursor.clearSelection()
+                            cursor.movePosition(cursor.Right)
                         break
         cursor.endEditBlock()
         self.editor.setTextCursor(cursor)
