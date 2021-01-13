@@ -34,8 +34,13 @@ class SmartBackSpaceMode(Mode):
             cursor.removeSelectedText()
         # If we're at the start of a block, simply delete the previous
         # character, which is the newline that takes the cursor to the previous
+        # block. If the cursor was initially at a line of only whitespace, we
+        # delete the whitespace so that it's not carried over to the previous
         # block.
         elif cursor.atBlockStart():
+            if cursor.block().text().isspace():
+                cursor.movePosition(cursor.EndOfBlock, cursor.KeepAnchor)
+                cursor.removeSelectedText()
             cursor.deletePreviousChar()
         else:
             orig_pos = cursor.position()
@@ -51,6 +56,7 @@ class SmartBackSpaceMode(Mode):
             # Select all the characters until the end of the block. If they
             # are all whitespace, delete them all. If not, do a regular
             # backspace.
+            cursor.setPosition(cursor.position())
             cursor.movePosition(cursor.EndOfBlock, cursor.KeepAnchor)
             selected_text = cursor.selectedText()
             # If we've selected some whitespace, delete this selection
