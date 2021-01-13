@@ -671,7 +671,7 @@ class CodeEdit(QtWidgets.QPlainTextEdit):
             try:
                 mnu = self._sub_menus[sub_menu]
             except KeyError:
-                mnu = QtWidgets.QMenu(sub_menu)
+                mnu = QtWidgets.QMenu(sub_menu, self)
                 self.add_menu(mnu)
                 self._sub_menus[sub_menu] = mnu
             finally:
@@ -1214,7 +1214,7 @@ class CodeEdit(QtWidgets.QPlainTextEdit):
 
         :return: QMenu
         """
-        mnu = QtWidgets.QMenu()
+        mnu = QtWidgets.QMenu(self)
         mnu.addActions(self._actions)
         mnu.addSeparator()
         for menu in self._menus:
@@ -1245,7 +1245,7 @@ class CodeEdit(QtWidgets.QPlainTextEdit):
 
     def _init_actions(self, create_standard_actions):
         """ Init context menu action """
-        menu_advanced = QtWidgets.QMenu(_('Advanced'))
+        menu_advanced = QtWidgets.QMenu(_('Advanced'), self)
         self.add_menu(menu_advanced)
         self._sub_menus = {
             'Advanced': menu_advanced
