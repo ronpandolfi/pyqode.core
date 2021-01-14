@@ -59,8 +59,12 @@ class SmartBackSpaceMode(Mode):
             cursor.setPosition(cursor.position())
             cursor.movePosition(cursor.EndOfBlock, cursor.KeepAnchor)
             selected_text = cursor.selectedText()
-            # If we've selected some whitespace, delete this selection
-            if selected_text and selected_text.isspace():
+            selected_whitespace = selected_text.isspace() and selected_text
+            selected_entire_block = cursor.block().text() == selected_text
+            # If we've selected some whitespace, delete this selection. But not
+            # if the entire line is whitespace, because then we want
+            # to de-indent.
+            if selected_whitespace and not selected_entire_block:
                 cursor.removeSelectedText()
             # Otherwise, return the cursor to its original position and
             # fall back to a de-indent-like behavior, such that as many
@@ -68,6 +72,11 @@ class SmartBackSpaceMode(Mode):
             # level.
             else:
                 cursor.setPosition(orig_pos)
+                # If there's only whitespace on the line, we also remove the
+                # trailing whitespace.
+                if selected_whitespace:
+                    cursor.movePosition(cursor.EndOfBlock, cursor.KeepAnchor)
+                    cursor.removeSelectedText()
                 if self.editor.use_spaces_instead_of_tabs:
                     cursor_pos = cursor.positionInBlock()
                     n_del = cursor_pos % self.editor.tab_length
