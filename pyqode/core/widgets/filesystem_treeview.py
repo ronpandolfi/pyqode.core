@@ -610,8 +610,8 @@ class FileSystemContextMenu(QtWidgets.QMenu):
     _explorer = None
     _command = None
 
-    def __init__(self):
-        super(FileSystemContextMenu, self).__init__()
+    def __init__(self, parent=None):
+        super(FileSystemContextMenu, self).__init__(parent)
         #: Reference to the tree view
         self.tree_view = None
 
