@@ -17,7 +17,7 @@ class ImageAnnotationsPanel(CheckerPanel):
         self._shown_size_hint = QtCore.QSize(256, 256)
         self._hidden_size_hint = QtCore.QSize(1, 1)
         self._size_hint = self._hidden_size_hint
-        super().__init__()
+        CheckerPanel.__init__(self)
     
     def sizeHint(self):
         return self._size_hint
