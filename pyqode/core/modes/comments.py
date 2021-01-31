@@ -42,6 +42,7 @@ class CommentsMode(api.Mode):
 
     def comment(self):
 
+        stripped_prefix = self.prefix.rstrip()
         cursor = self.editor.textCursor()
         selection_start = cursor.selectionStart()
         selection_end = cursor.selectionEnd()
@@ -72,7 +73,7 @@ class CommentsMode(api.Mode):
                 indent if max_common_indent is None
                 else min(indent, max_common_indent)
             )
-            if not stripped_line.startswith(self.prefix):
+            if not stripped_line.startswith(stripped_prefix):
                 comment_action = True
         # Go through all lines and comment or uncomment them
         processed_lines = []
@@ -95,8 +96,16 @@ class CommentsMode(api.Mode):
                         orig_anchor += 2
                 # Uncomment the line
                 else:
+                    # The prefix often ends with whitespace ('# '). But if a
+                    # line is commented without whitespace ('#') then we still
+                    # want to treat this as being commented.
+                    to_strip = (
+                        len(self.prefix)
+                        if line[max_common_indent:].startswith(self.prefix)
+                        else len(stripped_prefix)
+                    )
                     line = line[:max_common_indent] + \
-                        line[max_common_indent + len(self.prefix):]
+                        line[max_common_indent + to_strip:]
                     if not i:
                         orig_pos -= 2
                         orig_anchor -= 2
