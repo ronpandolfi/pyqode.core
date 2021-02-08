@@ -11,6 +11,7 @@ import weakref
 
 from pyqode.qt import QtCore, QtWidgets, QtGui
 from pyqode.core.api import utils
+from pyqode.core import icons
 from pyqode.core.dialogs import DlgUnsavedFiles
 from pyqode.core._forms import popup_open_files_ui
 from .tab_bar import TabBar
@@ -18,6 +19,8 @@ from .code_edits import GenericCodeEdit, TextCodeEdit
 
 from pyqode.core._forms import pyqode_core_rc
 assert pyqode_core_rc
+
+DEFAULT_EXTENSION = '.txt'
 
 
 def _logger():
@@ -41,7 +44,31 @@ class DraggableTabBar(TabBar):
         self.setAcceptDrops(True)
         self.setMouseTracking(True)
         self.setElideMode(QtCore.Qt.ElideNone)
-
+        self._plus_button = QtWidgets.QPushButton(
+            icons.icon(qta_name='fa.plus-circle'),
+            None,
+            self.parent()
+        )
+        self._plus_button.setFlat(True)
+        self._plus_button.show()
+        self._plus_button.clicked.connect(self._on_plus_button_clicked)
+        self.parent().last_tab_closed.connect(self._move_plus_button)
+        
+    def _move_plus_button(self):
+        self._plus_button.move(
+            self.mapTo(self.parent(), QtCore.QPoint(
+                max(0, self.geometry().right()),
+                max(0, (self.height() - self._plus_button.height()) // 2)
+            ))
+        )
+        
+    def _on_plus_button_clicked(self):
+        self.parent().parent().create_new_document()
+        
+    def paintEvent(self, event):
+        super(DraggableTabBar, self).paintEvent(event)
+        self._move_plus_button()
+        
     def mousePressEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:
             self._pos = event.pos()  # _pos is a QPoint defined in the header
@@ -1393,7 +1420,7 @@ class SplittableCodeEditTabWidget(SplittableTabWidget):
         return editor
 
     def create_new_document(self, base_name='New Document',
-                            extension='.txt', preferred_eol=0,
+                            extension=None, preferred_eol=0,
                             autodetect_eol=True, **kwargs):
         """
         Creates a new document.
@@ -1412,6 +1439,8 @@ class SplittableCodeEditTabWidget(SplittableTabWidget):
             widget constructor.
         :return: Code editor widget instance.
         """
+        if extension is None:
+            extension = self.default_extension()
         SplittableCodeEditTabWidget._new_count += 1
         name = '%s%d%s' % (base_name, self._new_count, extension)
         tab = self._create_code_edit(
@@ -1695,3 +1724,9 @@ class SplittableCodeEditTabWidget(SplittableTabWidget):
         self.closed_tabs_menu.removeAction(action)
         self.closed_tabs_history_btn.setEnabled(
             len(self.closed_tabs_menu.actions()) > 0)
+
+    def default_extension(self):
+        
+        if self.root:
+            return DEFAULT_EXTENSION
+        return self.get_root_splitter().default_extension()
