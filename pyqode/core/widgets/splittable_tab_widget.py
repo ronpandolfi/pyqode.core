@@ -327,16 +327,15 @@ class BaseTabWidget(QtWidgets.QTabWidget):
         return True
 
     def _create_tab_bar_menu(self):
-        context_mnu = QtWidgets.QMenu()
+        context_mnu = QtWidgets.QMenu(self)
         for name, slot, icon in [
                 (_('Close tab'), self.close, 'document-close'),
                 (_('Close tabs to the left'), self.close_left, 'tab-close-other'),
                 (_('Close tabs to the right'), self.close_right, 'tab-close-other'),
-                (_('Close others tabs'), self.close_others, 'tab-close-other'),
-                (_('Close all tabs'), self.close_all,
-                 'project-development-close-all'),
+                (_('Close other tabs'), self.close_others, 'tab-close-other'),
+                (_('Close all tabs'), self.close_all, 'project-development-close-all'),
                 (None, None, None),
-                (_('Detach tab'), self.detach_tab, 'tab-detach')]:
+            ]:
             if name is None and slot is None:
                 qaction = QtWidgets.QAction(self)
                 qaction.setSeparator(True)
@@ -374,7 +373,6 @@ class BaseTabWidget(QtWidgets.QTabWidget):
             context_mnu.addSeparator()
         for action in self.context_actions:
             context_mnu.addAction(action)
-
         tab = self.widget(self.tab_under_menu())
         index = self.indexOf(tab)
         self.a_close_right.setVisible(0 <= index < self.count() - 1)
