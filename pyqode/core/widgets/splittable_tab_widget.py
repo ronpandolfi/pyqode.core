@@ -177,8 +177,8 @@ class BaseTabWidget(QtWidgets.QTabWidget):
         self.a_close = None
         self.a_close_all = None
         self._menu_pos = None
+        self._n_pinned = 0  # the number of pinned tabs
         self._create_tab_bar_menu()
-
         self.detached_tabs = []
 
     def tab_under_menu(self):
@@ -196,13 +196,57 @@ class BaseTabWidget(QtWidgets.QTabWidget):
         Closes the active editor
         """
         self.tabCloseRequested.emit(self.tab_under_menu())
+        
+    def is_pinned(self, index):
+        """Checks whether the tab at the gives is pinned."""
+        return index < self._n_pinned
+    
+    def _unpinned_range(self):
+        """Gets a range of tabs starting from the first unpinned tab."""
+        return range(self._n_pinned, self.count())
+        
+    def pin(self, tab=None):
+        """Pins a tab. If no tab is specified, then the tab under the last
+        context menu is used.
+        """
+        if tab:
+            i = self.indexOf(tab)
+        else:
+            i = self.tab_under_menu()
+            tab = self.widget(i)
+        if self.is_pinned(i):
+            return
+        tab.unpinned_icon = self.tabIcon(i)
+        tab.unpinned_text = self.tabText(i)
+        self.setTabText(i, None)
+        self.setTabIcon(i, icons.icon(qta_name='fa.lock'))
+        self._on_tab_move_request(tab, 0)
+        self._n_pinned += 1
+    
+    def unpin(self, tab=None):
+        """Unpins a tab. If no tab is specified, then the tab under the last
+        context menu is used.
+        """
+        if tab:
+            i = self.indexOf(tab)
+        else:
+            i = self.tab_under_menu()
+            tab = self.widget(i)
+        if not self.is_pinned(i):
+            return
+        self.setTabIcon(i, tab.unpinned_icon)
+        self.setTabText(i, tab.unpinned_text)
+        self._n_pinned -= 1
 
     def close_others(self):
         """
         Closes every editors tabs except the current one.
         """
         current_widget = self.widget(self.tab_under_menu())
-        if self._try_close_dirty_tabs(exept=current_widget):
+        if self._try_close_dirty_tabs(
+            exept=current_widget,
+            tab_range=self._unpinned_range()
+        ):
             i = 0
             while self.count() > 1:
                 widget = self.widget(i)
@@ -217,11 +261,13 @@ class BaseTabWidget(QtWidgets.QTabWidget):
         """
         current_widget = self.widget(self.tab_under_menu())
         index = self.indexOf(current_widget)
-        if self._try_close_dirty_tabs(tab_range=range(index)):
-            while True:
-                widget = self.widget(0)
+        if self._try_close_dirty_tabs(
+            tab_range=range(self._n_pinned, index),
+        ):
+            while self.count() > self._n_pinned:
+                widget = self.widget(self._n_pinned)
                 if widget != current_widget:
-                    self.remove_tab(0)
+                    self.remove_tab(self._n_pinned)
                 else:
                     break
 
@@ -231,7 +277,11 @@ class BaseTabWidget(QtWidgets.QTabWidget):
         """
         current_widget = self.widget(self.tab_under_menu())
         index = self.indexOf(current_widget)
-        if self._try_close_dirty_tabs(tab_range=range(index + 1, self.count())):
+        index = max(index, self._n_pinned)
+        current_widget = self.widget(index)
+        if self._try_close_dirty_tabs(
+            tab_range = range(index + 1, self.count())
+        ):
             while True:
                 widget = self.widget(self.count() - 1)
                 if widget != current_widget:
@@ -243,11 +293,11 @@ class BaseTabWidget(QtWidgets.QTabWidget):
         """
         Closes all editors
         """
-        if self._try_close_dirty_tabs():
-            while self.count():
-                widget = self.widget(0)
+        if self._try_close_dirty_tabs(tab_range=self._unpinned_range()):
+            while self.count() > self._n_pinned:
+                widget = self.widget(self._n_pinned)
                 self.tab_closed.emit(widget)
-                self.remove_tab(0)
+                self.remove_tab(self._n_pinned)
             return True
         return False
 
@@ -327,45 +377,57 @@ class BaseTabWidget(QtWidgets.QTabWidget):
         return True
 
     def _create_tab_bar_menu(self):
+        tab = self.widget(self.tab_under_menu())
+        index = self.indexOf(tab)
         context_mnu = QtWidgets.QMenu(self)
-        for name, slot, icon in [
-                (_('Close tab'), self.close, 'document-close'),
-                (_('Close tabs to the left'), self.close_left, 'tab-close-other'),
-                (_('Close tabs to the right'), self.close_right, 'tab-close-other'),
-                (_('Close other tabs'), self.close_others, 'tab-close-other'),
-                (_('Close all tabs'), self.close_all, 'project-development-close-all'),
+        if self.is_pinned(index):
+            pin_action = QtWidgets.QAction(_('Unpin'), self)
+            pin_action.triggered.connect(self.unpin)
+            pin_action.setIcon(icons.icon(qta_name='fa.unlock'))
+        else:
+            pin_action = QtWidgets.QAction(_('Pin'), self)
+            pin_action.triggered.connect(self.pin)
+            pin_action.setIcon(icons.icon(qta_name='fa.lock'))
+        context_mnu.addAction(pin_action)
+        if not self.is_pinned(index):
+            for name, slot, icon in [
+                (None, None, None),
+                (_('Close tab'), self.close, 'fa.close'),
+                (_('Close tabs to the left'), self.close_left, 'fa.close'),
+                (_('Close tabs to the right'), self.close_right, 'fa.close'),
+                (_('Close other tabs'), self.close_others, 'fa.close'),
+                (_('Close all tabs'), self.close_all, 'fa.close'),
                 (None, None, None),
             ]:
-            if name is None and slot is None:
-                qaction = QtWidgets.QAction(self)
-                qaction.setSeparator(True)
-            else:
-                qaction = QtWidgets.QAction(name, self)
-                qaction.triggered.connect(slot)
-                if icon:
-                    qaction.setIcon(QtGui.QIcon.fromTheme(icon))
-            if slot == self.close and self.a_close is None:
-                self.a_close = qaction
-                self.addAction(self.a_close)
-            elif slot == self.close_left:
-                self.a_close_left = qaction
-            elif slot == self.close_right:
-                self.a_close_right = qaction
-            elif slot == self.close_others:
-                self.a_close_others = qaction
-            elif slot == self.close_all:
-                self.a_close_all = qaction
-                self.addAction(self.a_close_all)
-            context_mnu.addAction(qaction)
-            # self.addAction(qaction)
+                if name is None and slot is None:
+                    qaction = QtWidgets.QAction(self)
+                    qaction.setSeparator(True)
+                else:
+                    qaction = QtWidgets.QAction(name, self)
+                    qaction.triggered.connect(slot)
+                    if icon:
+                        qaction.setIcon(icons.icon(qta_name=icon))
+                if slot == self.close and self.a_close is None:
+                    self.a_close = qaction
+                    self.addAction(self.a_close)
+                elif slot == self.close_left:
+                    self.a_close_left = qaction
+                elif slot == self.close_right:
+                    self.a_close_right = qaction
+                elif slot == self.close_others:
+                    self.a_close_others = qaction
+                elif slot == self.close_all:
+                    self.a_close_all = qaction
+                    self.addAction(self.a_close_all)
+                context_mnu.addAction(qaction)
         context_mnu.addSeparator()
         menu = QtWidgets.QMenu(_('Split'), context_mnu)
-        menu.setIcon(QtGui.QIcon.fromTheme('split'))
+        menu.setIcon(icons.icon(qta_name='fa.th'))
         a = menu.addAction(_('Split horizontally'))
         a.triggered.connect(self._on_split_requested)
-        a.setIcon(QtGui.QIcon.fromTheme('view-split-left-right'))
+        a.setIcon(icons.icon(qta_name='fa.arrows-h'))
         a = menu.addAction(_('Split vertically'))
-        a.setIcon(QtGui.QIcon.fromTheme('view-split-top-bottom'))
+        a.setIcon(icons.icon(qta_name='fa.arrows-v'))
         a.triggered.connect(self._on_split_requested)
         context_mnu.addMenu(menu)
         context_mnu.addSeparator()
@@ -373,12 +435,11 @@ class BaseTabWidget(QtWidgets.QTabWidget):
             context_mnu.addSeparator()
         for action in self.context_actions:
             context_mnu.addAction(action)
-        tab = self.widget(self.tab_under_menu())
-        index = self.indexOf(tab)
-        self.a_close_right.setVisible(0 <= index < self.count() - 1)
-        self.a_close_left.setVisible(0 < index <= self.count() - 1)
-        self.a_close_others.setVisible(self.count() > 1)
-        self.a_close_all.setVisible(self.count() > 1)
+        if not self.is_pinned(index):
+            self.a_close_right.setVisible(0 <= index < self.count() - 1)
+            self.a_close_left.setVisible(0 < index <= self.count() - 1)
+            self.a_close_others.setVisible(self.count() > 1)
+            self.a_close_all.setVisible(self.count() > 1)
         if self._tab_bar_shortcuts:
             # These should not be set when multiple tabs will be visible in a
             # splitter, because then they will become ambiguous and hence
@@ -451,6 +512,9 @@ class BaseTabWidget(QtWidgets.QTabWidget):
 
     def _on_tab_close_requested(self, index):
         widget = self.widget(index)
+        if self.is_pinned(index):
+            self.unpin(widget)
+            return
         dirty = False
         try:
             if widget.original is None and not widget.clones:
@@ -575,6 +639,10 @@ class BaseTabWidget(QtWidgets.QTabWidget):
     def _on_tab_move_request(self, widget, new_index):
         parent = widget.parent_tab_widget
         index = parent.indexOf(widget)
+        if self.is_pinned(index):
+            new_index = min(self._n_pinned - 1, new_index)
+        else:
+            new_index = max(self._n_pinned, new_index)
         text = parent.tabText(index)
         icon = parent.tabIcon(index)
         parent.removeTab(index)
@@ -893,6 +961,7 @@ class SplittableTabWidget(QtWidgets.QSplitter):
         :param index: the index of the new splitter, or None to append
         :return: the new splitter
         """
+        self.main_tab_widget.unpin(widget)
         if widget.original:
             base = widget.original
         else:
@@ -1066,6 +1135,30 @@ class CodeEditTabWidget(BaseTabWidget):
     """
     default_directory = os.path.expanduser('~')
     dirty_changed = QtCore.Signal(bool)
+    
+    def __init__(self, parent, tab_bar_shortcuts=True):
+        
+        super(CodeEditTabWidget, self).__init__(parent, tab_bar_shortcuts)
+        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self._empty_space_context_menu)
+        
+    def _empty_space_context_menu(self, pos):
+        
+        menu = QtWidgets.QMenu(self)
+        menu.addAction(
+            icons.icon(qta_name='fa.plus-circle'),
+            _('New document'),
+            self.parent().create_new_document
+        )
+        closed_tabs_menu = self.parent().get_root_splitter().closed_tabs_menu
+        if len(closed_tabs_menu.actions()) > 0:
+            menu.addMenu(closed_tabs_menu)
+        menu.addAction(
+            icons.icon(qta_name='fa.close'),
+            _('Close all tabs'),
+            self.parent().close_all
+        )
+        menu.exec_(self.mapToGlobal(pos))
 
     @classmethod
     @utils.memoized
@@ -1256,7 +1349,11 @@ class SplittableCodeEditTabWidget(SplittableTabWidget):
                 'user-trash', QtGui.QIcon(':/pyqode-icons/rc/edit-trash.png')))
             self.closed_tabs_history_btn.setPopupMode(
                 QtWidgets.QToolButton.InstantPopup)
-            self.closed_tabs_menu = QtWidgets.QMenu()
+            self.closed_tabs_menu = QtWidgets.QMenu(
+                _('Re-open closed document'),
+                self
+            )
+            self.closed_tabs_menu.setIcon(icons.icon(qta_name='fa.undo'))
             self.closed_tabs_history_btn.setMenu(self.closed_tabs_menu)
             self.closed_tabs_history_btn.setDisabled(True)
             self.main_tab_widget.setCornerWidget(self.closed_tabs_history_btn)
