@@ -2,18 +2,7 @@
 """
 Contains the default indenter.
 """
-import logging
-from pyqode.core.api import TextHelper
 from pyqode.core.api.mode import Mode
-from pyqode.qt import QtGui
-
-
-def _logger():
-    return logging.getLogger(__name__)
-
-
-def debug(msg, *args):
-    return _logger().log(5, msg, *args)
 
 
 class IndenterMode(Mode):
@@ -21,28 +10,35 @@ class IndenterMode(Mode):
 
     It inserts/removes tabulations (a series of spaces defined by the
     tabLength settings) at the cursor position if there is no selection,
-    otherwise it fully indents/un-indents selected lines.
+    otherwise it fully indents/un-indents selected lines. If the
+    tab_always_indents property is set to True, then tab always indents, even
+    if there is no selection.
 
     To trigger an indentation/un-indentation programatically, you must emit
     :attr:`pyqode.core.api.CodeEdit.indent_requested` or
     :attr:`pyqode.core.api.CodeEdit.unindent_requested`.
     """
     def __init__(self):
+        self.tab_always_indents = False
         super(IndenterMode, self).__init__()
 
     @property
     def _indent_char(self):
-
         if self.editor.use_spaces_instead_of_tabs:
             return ' '
         return '\t'
 
     @property
     def _single_indent(self):
-
         if self.editor.use_spaces_instead_of_tabs:
             return self.editor.tab_length * ' '
         return '\t'
+        
+    @property
+    def _indent_width(self):
+        if self.editor.use_spaces_instead_of_tabs:
+            return self.editor.tab_length
+        return 1
 
     def on_state_changed(self, state):
         if state:
@@ -51,131 +47,141 @@ class IndenterMode(Mode):
         else:
             self.editor.indent_requested.disconnect(self.indent)
             self.editor.unindent_requested.disconnect(self.unindent)
-
-    def indent_selection(self, cursor):
+            
+    def _select_full_block(self, cursor, anchor, pos):
+        """Selects full blocks of text from the first character of the first
+        block until the last character of the last block, while keeping the
+        order of the position and anchor constant. Returns the new anchor,
+        new position, and a list of selected lines.
         """
-        Indent selected text
-
-        :param cursor: QTextCursor
-        """
-        doc = self.editor.document()
-        cursor.beginEditBlock()
-        nb_lines = len(cursor.selection().toPlainText().splitlines())
-        c = self.editor.textCursor()
-        if c.atBlockStart() and c.position() == c.selectionEnd():
-            nb_lines += 1
-        block = doc.findBlock(cursor.selectionStart())
-        i = 0
-        # indent every lines
-        while i < nb_lines:
-            cursor = QtGui.QTextCursor(block)
-            cursor.movePosition(cursor.StartOfLine, cursor.MoveAnchor)
-            cursor.insertText(self._single_indent)
-            block = block.next()
-            i += 1
-        cursor.endEditBlock()
-
-    def unindent_selection(self, cursor):
-        """
-        Un-indents selected text
-
-        :param cursor: QTextCursor
-        """
-        doc = self.editor.document()
-        nb_lines = len(cursor.selection().toPlainText().splitlines())
-        if nb_lines == 0:
-            nb_lines = 1
-        block = doc.findBlock(cursor.selectionStart())
-        assert isinstance(block, QtGui.QTextBlock)
-        i = 0
-        debug('unindent selection: %d lines', nb_lines)
-        start_pos = block.position()
-        while i < nb_lines:
-            cursor.setPosition(block.position(), cursor.MoveAnchor)
-            txt = block.text()
-            debug('line to unindent: %s', txt)
-            debug('self.editor.use_spaces_instead_of_tabs: %r',
-                  self.editor.use_spaces_instead_of_tabs)
-            indentation = len(txt) - len(txt.lstrip(self._indent_char))
-            debug('unindent line %d: %d characters', i, indentation)
-            cursor.movePosition(cursor.StartOfLine, cursor.MoveAnchor)
-            for _ in range(len(self._single_indent)):
-                txt = block.text()
-                if len(txt) and txt[0] == self._indent_char:
-                    cursor.deleteChar()
-            end_pos = block.position() + block.length()
-            block = block.next()
-            i += 1
-        # Restore selection
-        cursor.setPosition(start_pos, cursor.MoveAnchor)
-        cursor.setPosition(end_pos, cursor.KeepAnchor)
-        return cursor
-
-    def indent(self):
-        """
-        Indents text at cursor position.
-        """
-        cursor = self.editor.textCursor()
-        assert isinstance(cursor, QtGui.QTextCursor)
-        if cursor.hasSelection():
-            self.indent_selection(cursor)
+        cursor.setPosition(anchor)
+        if pos > anchor:
+            cursor.movePosition(cursor.StartOfBlock)
+            cursor.setPosition(pos, cursor.KeepAnchor)
+            cursor.movePosition(cursor.EndOfBlock, cursor.KeepAnchor)
         else:
-            # simply insert indentation at the cursor position
-            tab_len = self.editor.tab_length
-            cursor.beginEditBlock()
-            if self.editor.use_spaces_instead_of_tabs:
-                nb_space_to_add = tab_len - cursor.positionInBlock() % tab_len
-                cursor.insertText(nb_space_to_add * " ")
-            else:
-                cursor.insertText('\t')
-            cursor.endEditBlock()
-
-    def count_deletable_spaces(self, cursor, max_spaces):
-        # count the number of spaces deletable, stop at tab len
-        max_spaces = abs(max_spaces)
-        if max_spaces > self.editor.tab_length:
-            max_spaces = self.editor.tab_length
-        spaces = 0
-        trav_cursor = QtGui.QTextCursor(cursor)
-        while spaces < max_spaces or trav_cursor.atBlockStart():
-            pos = trav_cursor.position()
-            trav_cursor.movePosition(cursor.Left, cursor.KeepAnchor)
-            char = trav_cursor.selectedText()
-            if char == self._indent_char:
-                spaces += 1
-            else:
-                break
-            trav_cursor.setPosition(pos - 1)
-        return spaces
+            cursor.movePosition(cursor.EndOfBlock)
+            cursor.setPosition(pos, cursor.KeepAnchor)
+            cursor.movePosition(cursor.StartOfBlock, cursor.KeepAnchor)
+        return (
+            cursor.anchor(),
+            cursor.position(),
+            cursor.selectedText().split(u'\u2029')
+        )
+        
+    def _max_common_indent(self, lines):
+        """Gets the maximum indentation level that is common to all non-empty
+        lines.
+        """
+        max_common_indent = None
+        for line in lines:
+            if not line.strip():  # Ignore empty lines
+                continue
+            stripped_line = line.lstrip(self._indent_char)
+            indent = len(line) - len(stripped_line)
+            max_common_indent = (
+                indent if max_common_indent is None
+                else min(indent, max_common_indent)
+            )
+        return max_common_indent if max_common_indent is not None else 0
+    
+    def _restore_selection(self, cursor, selection, orig_anchor, orig_pos):
+        """Restores a selection based taking into account the order of the
+        original anchor and position, and the length of the new selection.
+        """
+        if orig_anchor > orig_pos:
+            cursor.setPosition(orig_pos + len(selection))
+            cursor.movePosition(
+                cursor.Left,
+                cursor.KeepAnchor,
+                n=len(selection)
+            )
+        else:
+            cursor.setPosition(orig_anchor)
+            cursor.movePosition(
+                cursor.Right,
+                cursor.KeepAnchor,
+                n=len(selection)
+            )
+            
+    def indent(self):
+        cursor = self.editor.textCursor()
+        orig_anchor = cursor.anchor()
+        orig_pos = cursor.position()
+        indent_width = self._indent_width
+        indent_char = self._indent_char
+        # If there is no selection, and there is non-whitespace before the
+        # cursor on the current block, then we simply insert the tab at the
+        # cursor position.
+        if not self.tab_always_indents and not cursor.hasSelection():
+            cursor.movePosition(cursor.StartOfBlock, cursor.KeepAnchor)
+            if cursor.selectedText().strip(indent_char):
+                cursor.setPosition(orig_pos)
+                cursor.insertText(self._single_indent)
+                self.editor.setTextCursor(cursor)
+                return
+        cursor.beginEditBlock()
+        # Select from the start of the first block until the end of the last
+        # block.
+        sel_anchor, sel_pos, lines = self._select_full_block(
+            cursor,
+            orig_anchor,
+            orig_pos
+        )
+        # Indent to the next tab stop and replace the selection
+        max_common_indent = self._max_common_indent(lines)
+        indent_width = indent_width - (max_common_indent % indent_width)
+        lines = [indent_char * indent_width + line for line in lines]
+        new_selection = '\n'.join(lines)
+        cursor.insertText(new_selection)
+        if orig_anchor == orig_pos:
+            cursor.setPosition(orig_pos + indent_width)
+        else:
+            self._restore_selection(
+                cursor,
+                new_selection,
+                sel_anchor,
+                sel_pos
+            )
+        cursor.endEditBlock()
+        self.editor.setTextCursor(cursor)
 
     def unindent(self):
-        """
-        Un-indents text at cursor position.
-        """
-
-        debug('unindent')
         cursor = self.editor.textCursor()
-        debug('cursor has selection %r', cursor.hasSelection())
-        if cursor.hasSelection():
-            cursor.beginEditBlock()
-            self.unindent_selection(cursor)
-            cursor.endEditBlock()
-            self.editor.setTextCursor(cursor)
+        orig_anchor = cursor.anchor()
+        orig_pos = cursor.position()
+        orig_pos_in_block = cursor.positionInBlock()
+        indent_width = self._indent_width
+        indent_char = self._indent_char
+        cursor.beginEditBlock()
+        # Select from the start of the first block until the end of the last
+        # block.
+        sel_anchor, sel_pos, lines = self._select_full_block(
+            cursor,
+            orig_anchor,
+            orig_pos
+        )
+        # De-indent to the previous tab stop and replace the selection
+        max_common_indent = self._max_common_indent(lines)
+        deindent_width = max_common_indent % indent_width
+        if not deindent_width and max_common_indent >= indent_width:
+            deindent_width = indent_width
+        lines = [line[deindent_width:] for line in lines]
+        new_selection = '\n'.join(lines)
+        cursor.insertText(new_selection)
+        # If there was no selection, restore the cursor position. Move the
+        # cursor to the left to compensate for the deindentation, but don't
+        # wrap to the previous line.
+        if orig_anchor == orig_pos:
+            cursor.setPosition(
+                orig_pos - min(orig_pos_in_block, deindent_width)
+            )
         else:
-            tab_len = self.editor.tab_length
-            indentation = cursor.positionInBlock()
-            max_spaces = tab_len - (indentation - (indentation % tab_len))
-            spaces = self.count_deletable_spaces(cursor, max_spaces)
-            debug('deleting %d space before cursor' % spaces)
-            cursor.beginEditBlock()
-            if spaces:
-                # delete spaces before cursor
-                for _ in range(spaces):
-                    cursor.deletePreviousChar()
-            else:
-                # un-indent whole line
-                debug('un-indent whole line')
-                cursor = self.unindent_selection(cursor)
-            cursor.endEditBlock()
-            self.editor.setTextCursor(cursor)
-            debug(cursor.block().text())
+            self._restore_selection(
+                cursor,
+                new_selection,
+                sel_anchor,
+                sel_pos
+            )
+        cursor.endEditBlock()
+        self.editor.setTextCursor(cursor)
