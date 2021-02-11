@@ -108,7 +108,6 @@ class ExtendedSelectionMode(Mode):
             self.editor.mouse_double_clicked.connect(self._on_double_click)
         else:
             self.editor.mouse_double_clicked.disconnect(self._on_double_click)
-            self.editor.mouse_pressd.disconnect(self._on_mouse_pressed)
 
     def _on_double_click(self, event):
         modifiers = event.modifiers()
