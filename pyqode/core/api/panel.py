@@ -116,8 +116,8 @@ class Panel(QtWidgets.QWidget, Mode):
                 # There is no syntax highlighter to adopt the theme from
                 self._use_syntax_theme = False
                 return self._background_brush
-        self._cached_background_brush = \
-            self._color_scheme.formats['background'].background()
+            self._cached_background_brush = \
+                self._color_scheme.formats['background'].background()
         return self._cached_background_brush
 
     @property
