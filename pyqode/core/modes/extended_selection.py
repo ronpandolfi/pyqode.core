@@ -4,6 +4,8 @@ This module contains the extended selection mode.
 from pyqode.qt import QtCore, QtWidgets, QtGui
 from pyqode.core.api import Mode, TextHelper
 
+TRIPLE_CLICK_TIMEOUT = 1000
+
 
 class ExtendedSelectionMode(Mode):
     """ Adds extended selection capabilities (Ctrl/Alt + Double click).
@@ -106,6 +108,7 @@ class ExtendedSelectionMode(Mode):
             self.editor.mouse_double_clicked.connect(self._on_double_click)
         else:
             self.editor.mouse_double_clicked.disconnect(self._on_double_click)
+            self.editor.mouse_pressd.disconnect(self._on_mouse_pressed)
 
     def _on_double_click(self, event):
         modifiers = event.modifiers()
@@ -113,10 +116,36 @@ class ExtendedSelectionMode(Mode):
             self.editor.textCursor().clearSelection()
             self.perform_extended_selection(event=event)
         elif modifiers & self.matched_sel_modifier:
-            # self.editor.textCursor().clearSelection()
             self.perform_matched_selection(event=event)
         elif int(modifiers) == QtCore.Qt.NoModifier:
             self.perform_word_selection(event=event)
+            self.editor.mouse_pressed.connect(self._on_triple_click)
+            QtCore.QTimer.singleShot(
+                TRIPLE_CLICK_TIMEOUT,
+                self._disconnect_triple_click
+            )
+            
+    def _on_triple_click(self, event):
+        """Triple-clicking a word leads to selection of a full line. Since
+        there is no triple-click event, this is implement by connecting a
+        single mouse press after a double clicking, and then disconnecting it
+        again after a timeout.
+        """
+        clicked_pos = self.editor.cursorForPosition(event.pos()).position()
+        cursor = self.editor.textCursor()
+        if cursor.anchor() <= clicked_pos <= cursor.position():
+            self.perform_line_selection()
+            try:
+                self.editor.mouse_pressed.disconnect(self._on_triple_click)
+            except TypeError:  # already disconnected
+                pass
+            event.accept()
+            
+    def _disconnect_triple_click(self):
+        try:
+            self.editor.mouse_pressed.disconnect(self._on_triple_click)
+        except TypeError:  # already disconnected
+            pass
 
     def perform_word_selection(self, event=None):
         """
