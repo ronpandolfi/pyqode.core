@@ -13,10 +13,12 @@ from .search_and_replace import SearchAndReplacePanel
 from .global_checker import GlobalCheckerPanel
 from .read_only import ReadOnlyPanel
 from .image_annotations import ImageAnnotationsPanel
+from .change_extension import ChangeExtensionPanel
 
 
 __all__ = [
     'CheckerPanel',
+    'ChangeExtensionPanel',
     'EncodingPanel',
     'FoldingPanel',
     'LineNumberPanel',
