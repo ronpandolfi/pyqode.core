@@ -58,7 +58,7 @@ class ZoomMode(Mode):
             a.triggered.connect(self.editor.reset_zoom)
             # Zoom menu
             a = self.mnu_zoom.menuAction()
-            a.setIcon(QtGui.QIcon.fromTheme('zoom'))
+            a.setIcon(QtGui.QIcon.fromTheme('zoom-in'))
             self.editor.add_action(a, sub_menu=None)
         else:
             self.editor.mouse_wheel_activated.disconnect(

@@ -199,7 +199,11 @@ class SearchAndReplacePanel(Panel, Ui_SearchPanel):
         self.toolButtonClose.setIcon(icon)
         self.toolButtonClose.setIconSize(icon_size)
 
+    def _build_menu(self):
+        if hasattr(self, 'menu'):
+            return
         self.menu = QtWidgets.QMenu(self.editor)
+        self.menu.setIcon(icons.icon(qta_name='fa.search'))
         self.menu.setTitle(_('Search'))
         self.menu.menuAction().setIcon(self.actionSearch.icon())
         self.menu.addAction(self.actionSearch)
@@ -234,6 +238,7 @@ class SearchAndReplacePanel(Panel, Ui_SearchPanel):
         super(SearchAndReplacePanel, self).on_state_changed(state)
         if state:
             # menu
+            self._build_menu()
             self.editor.add_action(self.menu.menuAction())
             # requestSearch slot
             self.editor.textChanged.connect(self.request_search)

@@ -3,6 +3,7 @@ This module contains the encodings related widgets (combox, menus,...)
 """
 import locale
 import logging
+from pyqode.core import icons
 from pyqode.core.api import ENCODINGS_MAP, convert_to_codec_key
 from pyqode.qt import QtCore, QtWidgets
 from pyqode.core.cache import Cache
@@ -101,6 +102,7 @@ class EncodingsMenu(QtWidgets.QMenu):
                  selected_encoding=locale.getpreferredencoding()):
         super(EncodingsMenu, self).__init__(parent)
         self.setTitle(title)
+        self.setIcon(icons.icon(qta_name='fa.file-text'))
         self._group = QtWidgets.QActionGroup(self)
         self._edit_action = None
         self._current_encoding = ''

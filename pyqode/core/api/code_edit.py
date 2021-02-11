@@ -1246,6 +1246,7 @@ class CodeEdit(QtWidgets.QPlainTextEdit):
     def _init_actions(self, create_standard_actions):
         """ Init context menu action """
         menu_advanced = QtWidgets.QMenu(_('Advanced'), self)
+        menu_advanced.setIcon(icons.icon(qta_name='fa.file-text'))
         self.add_menu(menu_advanced)
         self._sub_menus = {
             'Advanced': menu_advanced
@@ -1298,12 +1299,14 @@ class CodeEdit(QtWidgets.QPlainTextEdit):
             self.action_paste = action
         # duplicate line
         action = QtWidgets.QAction(_('Duplicate line'), self)
+        action.setIcon(icons.icon(qta_name='fa.copy'))
         action.setShortcut('Ctrl+D')
         action.triggered.connect(self.duplicate_line)
         self.add_action(action, sub_menu=None)
         self.action_duplicate_line = action
         # swap line up
         action = QtWidgets.QAction(_('Swap line up'), self)
+        action.setIcon(icons.icon(qta_name='fa.arrow-up'))
         action.setShortcut(QtGui.QKeySequence(
             QtCore.Qt.AltModifier + QtCore.Qt.Key_Up))
         action.triggered.connect(self.swapLineUp)
@@ -1311,6 +1314,7 @@ class CodeEdit(QtWidgets.QPlainTextEdit):
         self.action_swap_line_up = action
         # swap line down
         action = QtWidgets.QAction(_('Swap line down'), self)
+        action.setIcon(icons.icon(qta_name='fa.arrow-down'))
         action.setShortcut(QtGui.QKeySequence(
             QtCore.Qt.AltModifier + QtCore.Qt.Key_Down))
         action.triggered.connect(self.swapLineDown)
