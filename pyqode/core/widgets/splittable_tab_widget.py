@@ -44,15 +44,17 @@ class DraggableTabBar(TabBar):
         self.setAcceptDrops(True)
         self.setMouseTracking(True)
         self.setElideMode(QtCore.Qt.ElideNone)
-        self._plus_button = QtWidgets.QPushButton(
-            icons.icon(qta_name='fa.plus-circle'),
-            None,
-            self.parent()
-        )
-        self._plus_button.setFlat(True)
-        self._plus_button.show()
-        self._plus_button.clicked.connect(self._on_plus_button_clicked)
-        self.parent().last_tab_closed.connect(self._move_plus_button)
+        if self.parent().plus_button:
+            self._plus_button = QtWidgets.QPushButton(
+                icons.icon(qta_name='fa.plus-circle'),
+                None,
+                self.parent()
+            )
+            self._plus_button.setFlat(True)
+            self._plus_button.show()
+            self._plus_button.clicked.connect(self._on_plus_button_clicked)
+            self.parent().last_tab_closed.connect(self._move_plus_button)
+            self.paintEvent = self._custom_paint_event
         
     def _move_plus_button(self):
         self._plus_button.move(
@@ -65,7 +67,8 @@ class DraggableTabBar(TabBar):
     def _on_plus_button_clicked(self):
         self.parent().parent().create_new_document()
         
-    def paintEvent(self, event):
+    def _custom_paint_event(self, event):
+        """Is set as paintEvent when the plus button is shown."""
         super(DraggableTabBar, self).paintEvent(event)
         self._move_plus_button()
         
@@ -157,22 +160,32 @@ class BaseTabWidget(QtWidgets.QTabWidget):
 
     _detached_window_class = None
 
-    def __init__(self, parent, tab_bar_shortcuts=True):
+    def __init__(
+        self,
+        parent,
+        tabs_movable=True,
+        plus_button=True,
+        tab_context_menu=True,
+        empty_context_menu=True,
+    ):
         super(BaseTabWidget, self).__init__(parent)
+        self.plus_button = plus_button
         self._current = None
         self.currentChanged.connect(self._on_current_changed)
         self.tabCloseRequested.connect(self._on_tab_close_requested)
-
         tab_bar = DraggableTabBar(self)
-        tab_bar.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        tab_bar.customContextMenuRequested.connect(self._show_tab_context_menu)
-        tab_bar.tab_move_request.connect(self._on_tab_move_request)
+        if tab_context_menu:
+            tab_bar.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+            tab_bar.customContextMenuRequested.connect(
+                self._show_tab_context_menu
+            )
+        if tabs_movable:
+            tab_bar.tab_move_request.connect(self._on_tab_move_request)
         self.setTabBar(tab_bar)
         self.setAcceptDrops(True)
         self.setUsesScrollButtons(True)
 
         #: A list of additional context menu actions
-        self._tab_bar_shortcuts = tab_bar_shortcuts
         self.context_actions = []
         self.a_close = None
         self.a_close_all = None
@@ -440,12 +453,6 @@ class BaseTabWidget(QtWidgets.QTabWidget):
             self.a_close_left.setVisible(0 < index <= self.count() - 1)
             self.a_close_others.setVisible(self.count() > 1)
             self.a_close_all.setVisible(self.count() > 1)
-        if self._tab_bar_shortcuts:
-            # These should not be set when multiple tabs will be visible in a
-            # splitter, because then they will become ambiguous and hence
-            # ineffective.
-            self.a_close.setShortcut('Ctrl+W')
-            self.a_close_all.setShortcut('Ctrl+Shift+W')
         self._context_mnu = context_mnu
         return context_mnu
 
@@ -828,13 +835,22 @@ class SplittableTabWidget(QtWidgets.QSplitter):
         for splitter in self.child_splitters:
             splitter.tab_bar_visible = visible
 
-    def __init__(self, parent=None, root=True, create_popup=True,
-                 qsettings=None):
+    def __init__(
+        self,
+        parent=None,
+        root=True,
+        create_popup=False,
+        qsettings=None,
+        tabs_movable=True,
+        plus_button=True,
+        tab_context_menu=True,
+        empty_context_menu=True,
+    ):
         super(SplittableTabWidget, self).__init__(parent)
         SplittableTabWidget.tab_widget_klass._detached_window_class = \
             SplittableTabWidget.detached_window_klass
-        if root:
-            self._tab_bar_visible = True
+        self._tab_bar_visible = True
+        if root and create_popup:
             self._action_popup = QtWidgets.QAction(self)
             self._action_popup.setShortcutContext(QtCore.Qt.WindowShortcut)
             self._shortcut = 'Ctrl+T'
@@ -848,7 +864,10 @@ class SplittableTabWidget(QtWidgets.QSplitter):
         self.child_splitters = []
         self.main_tab_widget = self.tab_widget_klass(
             self,
-            tab_bar_shortcuts=False
+            tabs_movable=tabs_movable,
+            plus_button=plus_button,
+            tab_context_menu=tab_context_menu,
+            empty_context_menu=empty_context_menu
         )
         self.main_tab_widget.last_tab_closed.connect(
             self._on_last_tab_closed)
@@ -1136,11 +1155,26 @@ class CodeEditTabWidget(BaseTabWidget):
     default_directory = os.path.expanduser('~')
     dirty_changed = QtCore.Signal(bool)
     
-    def __init__(self, parent, tab_bar_shortcuts=True):
-        
-        super(CodeEditTabWidget, self).__init__(parent, tab_bar_shortcuts)
-        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.customContextMenuRequested.connect(self._empty_space_context_menu)
+    def __init__(
+        self,
+        parent,
+        tabs_movable=True,
+        plus_button=True,
+        tab_context_menu=True,
+        empty_context_menu=True,
+    ):
+        super(CodeEditTabWidget, self).__init__(
+            parent,
+            tabs_movable=tabs_movable,
+            plus_button=plus_button,
+            tab_context_menu=tab_context_menu,
+            empty_context_menu=empty_context_menu
+        )
+        if empty_context_menu:
+            self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+            self.customContextMenuRequested.connect(
+                self._empty_space_context_menu
+            )
         
     def _empty_space_context_menu(self, pos):
         
@@ -1336,28 +1370,53 @@ class SplittableCodeEditTabWidget(SplittableTabWidget):
 
     CLOSED_TABS_HISTORY_LIMIT = 10
 
-    def __init__(self, parent=None, root=True, qsettings=None):
+    def __init__(
+        self,
+        parent=None,
+        root=True,
+        create_popup=False,
+        qsettings=None,
+        tabs_movable=True,
+        plus_button=True,
+        tab_context_menu=True,
+        empty_context_menu=True,
+        corner_widget=False
+    ):
         SplittableTabWidget.detached_window_klass = DetachedEditorWindow
+        self._corner_widget = corner_widget
         super(SplittableCodeEditTabWidget, self).__init__(
-            parent, root, qsettings=qsettings)
+            parent,
+            root,
+            create_popup=create_popup,
+            qsettings=qsettings,
+            tabs_movable=tabs_movable,
+            plus_button=plus_button,
+            tab_context_menu=tab_context_menu,
+            empty_context_menu=empty_context_menu
+        )
         self.main_tab_widget.tabBar().double_clicked.connect(
             self.tab_bar_double_clicked.emit)
-        if root:
-            self.closed_tabs_history_btn = QtWidgets.QToolButton()
-            self.closed_tabs_history_btn.setAutoRaise(True)
-            self.closed_tabs_history_btn.setIcon(QtGui.QIcon.fromTheme(
-                'user-trash', QtGui.QIcon(':/pyqode-icons/rc/edit-trash.png')))
-            self.closed_tabs_history_btn.setPopupMode(
-                QtWidgets.QToolButton.InstantPopup)
-            self.closed_tabs_menu = QtWidgets.QMenu(
-                _('Re-open closed document'),
-                self
-            )
-            self.closed_tabs_menu.setIcon(icons.icon(qta_name='fa.undo'))
-            self.closed_tabs_history_btn.setMenu(self.closed_tabs_menu)
-            self.closed_tabs_history_btn.setDisabled(True)
-            self.main_tab_widget.setCornerWidget(self.closed_tabs_history_btn)
-            self.main_tab_widget.tab_closed.connect(self._on_tab_closed)
+        if not root:
+            return 
+        # The menu with closed tabs is used by the empty-space context menu
+        # as well as the corner widget, so we always initialize it.
+        self.closed_tabs_menu = QtWidgets.QMenu(
+            _('Re-open closed document'),
+            self
+        )
+        self.closed_tabs_menu.setIcon(icons.icon(qta_name='fa.undo'))
+        self.main_tab_widget.tab_closed.connect(self._on_tab_closed)
+        if not self._corner_widget:
+            return
+        self.closed_tabs_history_btn = QtWidgets.QToolButton()
+        self.closed_tabs_history_btn.setAutoRaise(True)
+        self.closed_tabs_history_btn.setIcon(QtGui.QIcon.fromTheme(
+            'user-trash', QtGui.QIcon(':/pyqode-icons/rc/edit-trash.png')))
+        self.closed_tabs_history_btn.setPopupMode(
+            QtWidgets.QToolButton.InstantPopup)
+        self.closed_tabs_history_btn.setMenu(self.closed_tabs_menu)
+        self.closed_tabs_history_btn.setDisabled(True)
+        self.main_tab_widget.setCornerWidget(self.closed_tabs_history_btn)
 
     @classmethod
     def register_code_edit(cls, code_edit_class):
@@ -1659,8 +1718,10 @@ class SplittableCodeEditTabWidget(SplittableTabWidget):
                         if action.toolTip() == original_path:
                             self.closed_tabs_menu.removeAction(action)
                             break
-                    self.closed_tabs_history_btn.setEnabled(
-                        len(self.closed_tabs_menu.actions()) > 0)
+                    if self._corner_widget:
+                        self.closed_tabs_history_btn.setEnabled(
+                            len(self.closed_tabs_menu.actions()) > 0
+                        )
                 return tab
 
     def close_document(self, path):
@@ -1794,7 +1855,8 @@ class SplittableCodeEditTabWidget(SplittableTabWidget):
                 action.setToolTip(path)
                 action.triggered.connect(self._open_closed_path)
                 action.setData(open_params)
-                self.closed_tabs_history_btn.setEnabled(True)
+                if self._corner_widget:
+                    self.closed_tabs_history_btn.setEnabled(True)
                 nb_actions = len(self.closed_tabs_menu.actions())
                 while nb_actions > self.CLOSED_TABS_HISTORY_LIMIT:
                     self.closed_tabs_menu.removeAction(
@@ -1817,8 +1879,10 @@ class SplittableCodeEditTabWidget(SplittableTabWidget):
             show_whitespaces=open_parameters['show_whitespaces'],
             **open_parameters['kwargs'])
         self.closed_tabs_menu.removeAction(action)
-        self.closed_tabs_history_btn.setEnabled(
-            len(self.closed_tabs_menu.actions()) > 0)
+        if self._corner_widget:
+            self.closed_tabs_history_btn.setEnabled(
+                len(self.closed_tabs_menu.actions()) > 0
+            )
 
     def default_extension(self):
         
