@@ -130,6 +130,8 @@ class ExtendedSelectionMode(Mode):
         single mouse press after a double clicking, and then disconnecting it
         again after a timeout.
         """
+        if event.button() != QtCore.Qt.LeftButton:
+            return
         clicked_pos = self.editor.cursorForPosition(event.pos()).position()
         cursor = self.editor.textCursor()
         if cursor.anchor() <= clicked_pos <= cursor.position():
