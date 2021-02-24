@@ -57,9 +57,9 @@ class ChangeExtensionPanel(Panel):
         splitter = self.splitter
         tab_widget = splitter.main_tab_widget
         ext = self._ext_edit.text()
+        self.extension_changed.emit(ext)
         splitter.create_new_document(extension=ext)
         tab_widget.remove_tab(tab_widget.indexOf(self.editor))
-        self.extension_changed.emit(ext)
         
     def _hide(self):
         try:
