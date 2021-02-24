@@ -25,7 +25,6 @@ def debug(msg, *args):
     return _logger().log(5, msg, *args)
 
 
-
 class SubsequenceSortFilterProxyModel(QtCore.QSortFilterProxyModel):
     """
     Performs subsequence matching/sorting (see pyQode/pyQode#1).
@@ -293,6 +292,7 @@ class CodeCompletionMode(Mode, QtCore.QObject):
         self._last_cursor_column = -1
         self._last_completion_prefix = ''
         self._tooltips = {}
+        self._completions = None
         self._show_tooltips = False
         self._request_id = self._last_request_id = 0
         self._working = False
@@ -506,39 +506,34 @@ class CodeCompletionMode(Mode, QtCore.QObject):
             if self._request_id - 1 == self._last_request_id:
                 # context has not changed and the correct results can be
                 # directly shown
-                debug('request completion ignored, context has not '
-                                'changed')
+                debug('request completion ignored, context has not changed')
                 self._show_popup()
-            else:
-                # same context but result not yet available
-                pass
             return True
+        debug('requesting completion')
+        data = {
+            'code': self.editor.toPlainText(),
+            'line': line,
+            'column': column,
+            'path': self.editor.file.path,
+            'encoding': self.editor.file.encoding,
+            'prefix': self.completion_prefix,
+            'request_id': self._request_id,
+            'triggered_by_symbol': triggered_by_symbol
+        }
+        try:
+            self.editor.backend.send_request(
+                backend.CodeCompletionWorker, args=data,
+                on_receive=self._on_results_available)
+        except NotRunning:
+            _logger().exception('failed to send the completion request')
+            return False
         else:
-            debug('requesting completion')
-            data = {
-                'code': self.editor.toPlainText(),
-                'line': line,
-                'column': column,
-                'path': self.editor.file.path,
-                'encoding': self.editor.file.encoding,
-                'prefix': self.completion_prefix,
-                'request_id': self._request_id,
-                'triggered_by_symbol': triggered_by_symbol
-            }
-            try:
-                self.editor.backend.send_request(
-                    backend.CodeCompletionWorker, args=data,
-                    on_receive=self._on_results_available)
-            except NotRunning:
-                _logger().exception('failed to send the completion request')
-                return False
-            else:
-                debug('request sent: %r', data)
-                self._last_cursor_column = column
-                self._last_cursor_line = line
-                self._last_completion_prefix = self.completion_prefix
-                self._request_id += 1
-                return True
+            debug('request sent: %r', data)
+            self._last_cursor_column = column
+            self._last_cursor_line = line
+            self._last_completion_prefix = self.completion_prefix
+            self._request_id += 1
+            return True
 
     def _is_shortcut(self, event):
         """
@@ -660,6 +655,9 @@ class CodeCompletionMode(Mode, QtCore.QObject):
 
         :param completionPrefix:
         """
+        if self._completions == completions:
+            return  # avoid unnecessary updates to avoid flickering
+        self._completions = completions
         # build the completion model
         cc_model = QtGui.QStandardItemModel()
         self._tooltips.clear()
