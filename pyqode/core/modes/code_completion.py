@@ -293,6 +293,8 @@ class CodeCompletionMode(Mode, QtCore.QObject):
         self._last_completion_prefix = ''
         self._tooltips = {}
         self._completions = None
+        self._completion_anchor = None
+        self._completion_rect = None
         self._show_tooltips = False
         self._request_id = self._last_request_id = 0
         self._working = False
@@ -594,6 +596,11 @@ class CodeCompletionMode(Mode, QtCore.QObject):
         text_cursor = self.editor.textCursor()
         text_cursor.movePosition(text_cursor.Left, text_cursor.MoveAnchor, 1)
         text_cursor.select(text_cursor.WordUnderCursor)
+        # Only update the position of the completer popup if the anchor changed
+        # to avoid it from being displaced a bit every time.
+        if text_cursor.anchor() != self._completion_anchor:
+            self._completion_anchor = text_cursor.anchor()
+            self._completion_rect = self._get_popup_rect()
         word_so_far = text_cursor.selectedText()
         self._completer.setCaseSensitivity(
             QtCore.Qt.CaseSensitive
@@ -615,7 +622,7 @@ class CodeCompletionMode(Mode, QtCore.QObject):
             return
         if self._completer.widget() != self.editor:
             self._completer.setWidget(self.editor)
-        self._completer.complete(self._get_popup_rect())
+        self._completer.complete(self._completion_rect)
         # The QCompleter popup doesn't respect the stylesheet. Here we
         # reconstruct a basic stylesheet and directly apply it. There may be
         # more elegant solutions, but this works.
