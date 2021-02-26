@@ -9,6 +9,7 @@ from .backspace import SmartBackSpaceMode
 from .caret_line_highlight import CaretLineHighlighterMode
 from .case_converter import CaseConverterMode
 from .line_sorter import LineSorterMode
+from .calltips import CalltipsMode
 from .checker import CheckerMode
 from .checker import CheckerMessage
 from .checker import CheckerMessages
