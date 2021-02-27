@@ -12,6 +12,20 @@ from pyqode.qt import QtWidgets, QtCore, QtGui
 from pyqode.core.api.utils import TextHelper
 from pyqode.core import backend
 
+NAVIGATION_KEYS = (
+    QtCore.Qt.Key_Backspace,
+    QtCore.Qt.Key_Back,
+    QtCore.Qt.Key_Delete,
+    QtCore.Qt.Key_End,
+    QtCore.Qt.Key_Home,
+    QtCore.Qt.Key_Left,
+    QtCore.Qt.Key_Right,
+    QtCore.Qt.Key_Up,
+    QtCore.Qt.Key_Down,
+    QtCore.Qt.Key_Space
+)
+MIN_WIDTH = 200
+
 
 def _logger():
     return logging.getLogger(__name__)
@@ -295,6 +309,7 @@ class CodeCompletionMode(Mode, QtCore.QObject):
         self._completions = None
         self._completion_anchor = None
         self._completion_rect = None
+        self._char_width = None
         self._show_tooltips = False
         self._request_id = self._last_request_id = 0
         self._working = False
@@ -565,18 +580,32 @@ class CodeCompletionMode(Mode, QtCore.QObject):
             self._last_completion_prefix = ''
             QtWidgets.QToolTip.hideText()
 
-    def _get_popup_rect(self):
-        cursor_rec = self.editor.cursorRect()
-        char_width = self.editor.fontMetrics().width('A')
-        prefix_len = (len(self.completion_prefix) * char_width)
-        cursor_rec.translate(
-            self.editor.panels.margin_size() - prefix_len,
-            self.editor.panels.margin_size(0) + 5)
+    def _update_popup_rect(self, anchor):
+        """
+        Updates the rectangle of the completer. If the anchor stays the same,
+        only the width of the popup is adjusted. Otherwise, the position is
+        also adjusted. There is a minimum with for the completer, because
+        occasionally the size hint returns 0, even when there are completion
+        entries.
+        
+        :param anchor: the anchor of the cursor, i.e. the start of the
+                       to-be-completed word.
+        """
+        if anchor != self._completion_anchor:
+            self._completion_rect = self.editor.cursorRect()
+            if self._char_width is None:
+                self._char_width = self.editor.fontMetrics().width('_')
+            prefix_len = (len(self.completion_prefix) * self._char_width)
+            self._completion_rect.translate(
+                self.editor.panels.margin_size() - prefix_len,
+                self.editor.panels.margin_size(0) + 5
+            )
+            self._completion_anchor = anchor
         popup = self._completer.popup()
-        width = popup.verticalScrollBar().sizeHint().width()
-        cursor_rec.setWidth(
-            self._completer.popup().sizeHintForColumn(0) + width)
-        return cursor_rec
+        width_hint = max(MIN_WIDTH, popup.sizeHintForColumn(0))
+        self._completion_rect.setWidth(
+            width_hint + popup.verticalScrollBar().sizeHint().width()
+        )
 
     def _show_popup(self, index=0):
         """
@@ -596,11 +625,7 @@ class CodeCompletionMode(Mode, QtCore.QObject):
         text_cursor = self.editor.textCursor()
         text_cursor.movePosition(text_cursor.Left, text_cursor.MoveAnchor, 1)
         text_cursor.select(text_cursor.WordUnderCursor)
-        # Only update the position of the completer popup if the anchor changed
-        # to avoid it from being displaced a bit every time.
-        if text_cursor.anchor() != self._completion_anchor:
-            self._completion_anchor = text_cursor.anchor()
-            self._completion_rect = self._get_popup_rect()
+        self._update_popup_rect(text_cursor.anchor())
         word_so_far = text_cursor.selectedText()
         self._completer.setCaseSensitivity(
             QtCore.Qt.CaseSensitive
@@ -646,13 +671,7 @@ class CodeCompletionMode(Mode, QtCore.QObject):
         )
 
     def _show_completions(self, completions):
-        debug("showing %d completions" % len(completions))
-        debug('popup state: %r', self._completer.popup().isVisible())
-        t = time.time()
         self._update_model(completions)
-        elapsed = time.time() - t
-        debug("completion model updated: %d items in %f seconds",
-                        self._completer.model().rowCount(), elapsed)
         self._show_popup()
 
     def _update_model(self, completions):
@@ -665,6 +684,7 @@ class CodeCompletionMode(Mode, QtCore.QObject):
         if self._completions == completions:
             return  # avoid unnecessary updates to avoid flickering
         self._completions = completions
+        self._completion_anchor = None
         # build the completion model
         cc_model = QtGui.QStandardItemModel()
         self._tooltips.clear()
@@ -704,13 +724,4 @@ class CodeCompletionMode(Mode, QtCore.QObject):
 
     @staticmethod
     def _is_navigation_key(event):
-        return (event.key() == QtCore.Qt.Key_Backspace or
-                event.key() == QtCore.Qt.Key_Back or
-                event.key() == QtCore.Qt.Key_Delete or
-                event.key() == QtCore.Qt.Key_End or
-                event.key() == QtCore.Qt.Key_Home or
-                event.key() == QtCore.Qt.Key_Left or
-                event.key() == QtCore.Qt.Key_Right or
-                event.key() == QtCore.Qt.Key_Up or
-                event.key() == QtCore.Qt.Key_Down or
-                event.key() == QtCore.Qt.Key_Space)
+        return event.key() in NAVIGATION_KEYS
