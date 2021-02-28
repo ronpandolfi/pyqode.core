@@ -127,7 +127,6 @@ class CommentsMode(api.Mode):
         elif cursor.blockNumber() > orig_anchor_block_nr:
             cursor.movePosition(cursor.PreviousBlock)
             cursor.movePosition(cursor.EndOfBlock)
-        cursor.setPosition(orig_anchor)
         # And the same for the position
         cursor.setPosition(orig_pos, cursor.KeepAnchor)
         if cursor.blockNumber() < orig_pos_block_nr:
