@@ -90,17 +90,18 @@ class CalltipsMode(Mode, QtCore.QObject):
     def _tooltip_style(self):
         if self._cached_style is not None:
             return self._cached_style
+        pal = self.editor.palette()
         qss = '''
-            white-space:pre;
-            background: {};
-            color: {};
-            font-family: {};
-            font-size: {};
+            white-space: pre;
+            background: {background_color};
+            color: {text_color};
+            font-family: {font_family};
+            font-size: {font_size};
         '''.format(
-            self.editor.palette().base().color().name(),
-            self.editor.palette().text().color().name(),
-            self.editor.font_name,
-            self.editor.font_size,
+            background_color=pal.base().color().name(),
+            text_color=pal.text().color().name(),
+            font_family=self.editor.font_name,
+            font_size=self.editor.font_size,
         )
         try:
             highlight = self.editor.syntax_highlighter.formats[
@@ -113,7 +114,7 @@ class CalltipsMode(Mode, QtCore.QObject):
     def _format_tooltip(self, name, params, current_param=None, doc=None):
         lines = []
         qss, highlight = self._tooltip_style()
-        html = '<p style="{}">{}('.format(qss, name)
+        html = '<div style="{}">{}('.format(qss, name)
         line = '{}('.format(name)
         for i, param in enumerate(params):
             if len(line) + len(param) > MAX_CALLTIP_WIDTH:
@@ -129,7 +130,7 @@ class CalltipsMode(Mode, QtCore.QObject):
             html += param
             if i == current_param:
                 html += "</span>"
-        lines.append(html + ')</p>')
+        lines.append(html + ')</div>')
         return '\n'.join(lines)
 
     def _display_tooltip(self, call, col):
