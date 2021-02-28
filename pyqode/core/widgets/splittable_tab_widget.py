@@ -1178,6 +1178,12 @@ class CodeEditTabWidget(BaseTabWidget):
         
     def _empty_space_context_menu(self, pos):
         
+        # This function can be triggered when clicking anywhere in the editor
+        # rect. We ignore all clicks that are below the tabBar. That way we
+        # emulate a context meny for the empty space of the tabBar, which is
+        # actually not part of the tabBar at all.
+        if pos.y() >= self.tabBar().height():
+            return
         menu = QtWidgets.QMenu(self)
         menu.addAction(
             icons.icon(qta_name='fa.plus-circle'),
