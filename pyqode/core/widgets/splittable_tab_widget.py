@@ -902,6 +902,7 @@ class SplittableTabWidget(QtWidgets.QSplitter):
         :param title: Tab title
         :param icon: Tab icon
         """
+        title = title.replace('&', '&&')  # allow literal & characters
         if icon:
             tab._icon = icon
         if not hasattr(tab, 'clones'):
