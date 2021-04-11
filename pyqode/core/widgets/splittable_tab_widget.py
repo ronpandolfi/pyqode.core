@@ -22,6 +22,19 @@ assert pyqode_core_rc
 
 DEFAULT_EXTENSION = '.txt'
 
+# The null translation should be installed when pyqode.core is imported.
+# However, under rare conditions (and hard to reproduce) it's sometimes not
+# available in this module. Therefore, as a temporary bug fix, we also check
+# here whether the translation is installed, and install the null translation
+# if necessary.
+try:
+    # check if application code is using gettext
+    _('')
+except NameError:
+    # install a null translation
+    import gettext
+    gettext.NullTranslations().install()
+
 
 def _logger():
     return logging.getLogger(__name__)
