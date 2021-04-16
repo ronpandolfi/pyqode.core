@@ -51,6 +51,7 @@ class BackendManager(Manager):
         self.interpreter = None
         self.args = None
         self._shared = False
+        self._share_id = None
         self._heartbeat_timer = QtCore.QTimer()
         self._heartbeat_timer.setInterval(BackendManager.HEARTBEAT_INTERVAL)
         self._heartbeat_timer.timeout.connect(self._send_heartbeat)
