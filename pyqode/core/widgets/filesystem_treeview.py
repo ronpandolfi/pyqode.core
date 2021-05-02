@@ -44,7 +44,7 @@ class FileSystemTreeView(QtWidgets.QTreeView):
         """
         def __init__(self, ignored_patterns):
             super(FileSystemTreeView.FilterProxyModel, self).__init__()
-            self.ignored_patterns = ignored_patterns
+            self.ignored_patterns = [p.strip() for p in ignored_patterns if p.strip()]
             self._ignored_unused = []
             self._ignore_spec = PathSpec.from_lines(
                 'gitwildmatch',
@@ -73,7 +73,11 @@ class FileSystemTreeView(QtWidgets.QTreeView):
                 return True
             if fp in self._ignored_unused:
                 return False
-            if self._ignore_spec.match_file(os.path.relpath(fp, self._root)):
+            rel_path = os.path.relpath(fp, self._root)
+            # We need to accept the root folder and all its parent folders
+            if rel_path == '.' or rel_path.startswith('..'):
+                return True
+            if self._ignore_spec.match_file(rel_path):
                 return False
             debug('accepting %s', finfo.filePath())
             return True
