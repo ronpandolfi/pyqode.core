@@ -2,13 +2,13 @@
 This module contains the file system tree view.
 """
 import sys
-import fnmatch
 import locale
 import logging
 import os
 import platform
 import shutil
 import subprocess
+from pathspec import PathSpec
 from pyqode.qt import QtCore, QtGui, QtWidgets
 from pyqode.core import icons
 
@@ -19,7 +19,7 @@ def _logger():
 
 def debug(msg, *args):
     return _logger().log(5, msg, *args)
-
+    
 
 class FileSystemTreeView(QtWidgets.QTreeView):
     """
@@ -42,12 +42,14 @@ class FileSystemTreeView(QtWidgets.QTreeView):
         Excludes :attr:`ignored_directories` and :attr:`ignored_extensions`
         from the file system model.
         """
-        def __init__(self):
+        def __init__(self, ignored_patterns):
             super(FileSystemTreeView.FilterProxyModel, self).__init__()
-            #: The list of file extension to exclude
-            self.ignored_patterns = [
-                '*.pyc', '*.pyo', '*.coverage', '.DS_Store', '__pycache__']
+            self.ignored_patterns = ignored_patterns
             self._ignored_unused = []
+            self._ignore_spec = PathSpec.from_lines(
+                'gitwildmatch',
+                self.ignored_patterns
+            )
 
         def set_root_path(self, path):
             """
@@ -61,7 +63,7 @@ class FileSystemTreeView(QtWidgets.QTreeView):
                 item_path = os.path.join(parent_dir, item)
                 if item_path != path:
                     self._ignored_unused.append(os.path.normpath(item_path))
-
+                    
         def filterAcceptsRow(self, row, parent):
             index0 = self.sourceModel().index(row, 0, parent)
             finfo = self.sourceModel().fileInfo(index0)
@@ -71,12 +73,11 @@ class FileSystemTreeView(QtWidgets.QTreeView):
                 return True
             if fp in self._ignored_unused:
                 return False
-            for ptrn in self.ignored_patterns:
-                if fnmatch.fnmatch(fn, ptrn):
-                    return False
+            if self._ignore_spec.match_file(os.path.relpath(fp, self._root)):
+                return False
             debug('accepting %s', finfo.filePath())
             return True
-
+        
     #: signal emitted when the user deleted a file or a directory
     #: Deprecated, use files_deleted instead.
     #: Parameters:
@@ -180,8 +181,7 @@ class FileSystemTreeView(QtWidgets.QTreeView):
         Ignore patterns are used to filter out unwanted files or directories
         from the file system model.
 
-        A pattern is a Unix shell-style wildcards. See :mod:`fnmatch` for a
-        deeper explanation about the shell-style wildcards.
+        Patterns follow the .gitignore style as implemented in pathspec.
         """
         for ptrn in patterns:
             if isinstance(ptrn, list):
@@ -232,9 +232,7 @@ class FileSystemTreeView(QtWidgets.QTreeView):
                                         QtCore.QDir.NoDotAndDotDot |
                                         QtCore.QDir.Hidden)
         self._fs_model_source.setIconProvider(self._icon_provider)
-        self._fs_model_proxy = self.FilterProxyModel()
-        for item in self._ignored_patterns:
-            self._fs_model_proxy.ignored_patterns.append(item)
+        self._fs_model_proxy = self.FilterProxyModel(self._ignored_patterns)
         self._fs_model_proxy.setSourceModel(self._fs_model_source)
         self._fs_model_proxy.set_root_path(path)
         # takes parent of the root path, filter will keep only `path`, that
