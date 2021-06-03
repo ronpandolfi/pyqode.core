@@ -74,9 +74,15 @@ class FileSystemTreeView(QtWidgets.QTreeView):
             if fp in self._ignored_unused:
                 return False
             rel_path = os.path.relpath(fp, self._root)
+            rel_root = os.path.join('..', os.path.basename(self._root))
             # We need to accept the root folder and all its parent folders
-            if rel_path == '.' or rel_path.startswith('..'):
+            if rel_path == '.' or rel_path == '..':
                 return True
+            # Ignore files and folders that are at the same level as the root
+            # itself. This ensures that these are not added as unwanted
+            # top-level items.
+            if rel_path.startswith('..'):
+                return rel_path.startswith(rel_root)
             if self._ignore_spec.match_file(rel_path):
                 return False
             debug('accepting %s', finfo.filePath())
