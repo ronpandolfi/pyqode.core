@@ -163,7 +163,7 @@ class EncodingPanel(Panel):
         if self.__add_ctx_mnu:
             # add context menu
             from pyqode.core.widgets import EncodingsContextMenu
-            EncodingsContextMenu(parent=editor)
+            self._context_menu = EncodingsContextMenu(parent=editor)
 
     def _reload(self):
         self.hide()
@@ -197,6 +197,8 @@ class EncodingPanel(Panel):
     def clone_settings(self, original):
         self.color = original.color
         self.foreground = original.foreground
+        if self.__add_ctx_mnu:
+            self._context_menu._refresh()
 
 
 if __name__ == '__main__':
