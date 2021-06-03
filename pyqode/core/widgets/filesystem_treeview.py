@@ -289,6 +289,10 @@ class FileSystemTreeView(QtWidgets.QTreeView):
             self._fs_model_proxy.mapToSource(index))
 
     def _show_context_menu(self, point):
+        # Print if the context menu is requested for an empty space, then
+        # we select the root so that the action is applied on the root folder
+        if self.indexAt(point).row() < 0:
+            self.select_path(self.root_path)
         if self.context_menu:
             self.about_to_show_context_menu.emit(
                 FileSystemHelper(self).get_current_path())
