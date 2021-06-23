@@ -57,4 +57,6 @@ def icon(theme_name='', path='', qta_name='', qta_options=None, use_qta=None):
             ret_val = QtGui.QIcon.fromTheme(theme_name)
         elif path:
             ret_val = QtGui.QIcon(path)
+    if ret_val is None:
+        ret_val = QtGui.QIcon.fromTheme('image-missing')
     return ret_val

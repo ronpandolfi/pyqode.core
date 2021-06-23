@@ -138,7 +138,7 @@ class Cache(object):
 
     def set_cursor_position(self, path, position):
         """
-        Cache encoding for the specified file path.
+        Cache cursor position for the specified file path.
 
         :param path: path of the file to cache
         :param position: cursor position to cache
@@ -149,6 +149,37 @@ class Cache(object):
             map = {}
         map[path] = position
         self._settings.setValue('cachedCursorPosition', json.dumps(map))
+        
+    def get_color(self, file_path):
+        """
+        Gets the color for file_path. This color is shown in the tab bar.
+
+        :param file_path: path of the file in the cache
+        :return: Cached color or None
+        """
+        try:
+            colors = json.loads(self._settings.value('cachedColor'))
+        except TypeError:
+            colors = {}
+        return colors.get(file_path, None)
+
+    def set_color(self, path, color):
+        """
+        Cache the color for the specified file path.
+
+        :param path: path of the file to cache
+        :param color: color to cache. If None, then the color is cleared.
+        """
+        try:
+            colors = json.loads(self._settings.value('cachedColor'))
+        except TypeError:
+            colors = {}
+        if color is None:
+            if path in colors:
+                del colors[path]
+        else:
+            colors[path] = color
+        self._settings.setValue('cachedColor', json.dumps(colors))
 
 
 def _logger():

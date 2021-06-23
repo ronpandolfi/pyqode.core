@@ -12,6 +12,7 @@ import weakref
 from pyqode.qt import QtCore, QtWidgets, QtGui
 from pyqode.core.api import utils
 from pyqode.core import icons
+from pyqode.core.cache import Cache
 from pyqode.core.dialogs import DlgUnsavedFiles
 from pyqode.core._forms import popup_open_files_ui
 from .tab_bar import TabBar
@@ -245,9 +246,10 @@ class BaseTabWidget(QtWidgets.QTabWidget):
         tab.unpinned_icon = self.tabIcon(i)
         tab.unpinned_text = self.tabText(i)
         self.setTabText(i, None)
-        self.setTabIcon(i, icons.icon(qta_name='fa.lock'))
+        self.setTabIcon(i, icons.icon(qta_name='fa.map-pin'))
         self._on_tab_move_request(tab, 0)
         self._n_pinned += 1
+        self._set_tab_color(i)
     
     def unpin(self, tab=None):
         """Unpins a tab. If no tab is specified, then the tab under the last
@@ -263,6 +265,7 @@ class BaseTabWidget(QtWidgets.QTabWidget):
         self.setTabIcon(i, tab.unpinned_icon)
         self.setTabText(i, tab.unpinned_text)
         self._n_pinned -= 1
+        self._set_tab_color(i)
 
     def close_others(self):
         """
@@ -413,7 +416,7 @@ class BaseTabWidget(QtWidgets.QTabWidget):
         else:
             pin_action = QtWidgets.QAction(_('Pin'), self)
             pin_action.triggered.connect(self.pin)
-            pin_action.setIcon(icons.icon(qta_name='fa.lock'))
+            pin_action.setIcon(icons.icon(qta_name='fa.map-pin'))
         context_mnu.addAction(pin_action)
         if not self.is_pinned(index):
             for name, slot, icon in [
@@ -447,6 +450,10 @@ class BaseTabWidget(QtWidgets.QTabWidget):
                     self.addAction(self.a_close_all)
                 context_mnu.addAction(qaction)
         context_mnu.addSeparator()
+        a = context_mnu.addAction(_('Select tab color …'))
+        a.setIcon(icons.icon(qta_name='fa.paint-brush'))
+        a.triggered.connect(self._select_tab_color)
+        context_mnu.addSeparator()
         menu = QtWidgets.QMenu(_('Split'), context_mnu)
         menu.setIcon(icons.icon(qta_name='fa.th'))
         a = menu.addAction(_('Split horizontally'))
@@ -477,6 +484,42 @@ class BaseTabWidget(QtWidgets.QTabWidget):
             mnu = self._create_tab_bar_menu()
             mnu.exec_(self.tabBar().mapToGlobal(position))
             self._menu_pos = None
+            
+    def _select_tab_color(self):
+        """Selects a color through a selection dialog and applies it to a tab.
+        """
+        color = QtWidgets.QColorDialog.getColor()
+        widget = self.widget(self.tab_under_menu())
+        index = self.indexOf(widget)
+        # If the color selection was cancelled, we clear the color from the
+        # cache and reset the tab color to the default text color
+        if not color.isValid():
+            if widget.file.path:
+                Cache().set_color(widget.file.path, None)
+            self._set_tab_color(index, self.palette().text().color().name())
+            return
+        if widget.file.path:
+            Cache().set_color(widget.file.path, color.name())
+        self._set_tab_color(index, color.name())
+            
+    def _set_tab_color(self, index, color=None):
+        """Sets the color of a tab based on an association between a file path
+        and a color from the cache.
+        """
+        if color is None:
+            color = Cache().get_color(self.widget(index).file.path)
+        if color is None:
+            return
+        if self.is_pinned(index):
+            self.tabBar().setTabIcon(
+                index,
+                icons.icon(
+                    qta_name='fa.map-pin',
+                    qta_options={'color': color}
+                )
+            )
+        else:
+            self.tabBar().setTabTextColor(index, QtGui.QColor(color))
 
     def _collect_dirty_tabs(self, skip=None, tab_range=None):
         """
@@ -694,7 +737,7 @@ class BaseTabWidget(QtWidgets.QTabWidget):
         attribute on the tab instance.
         """
         tab.parent_tab_widget = self
-        super(BaseTabWidget, self).addTab(tab, *args)
+        return super(BaseTabWidget, self).addTab(tab, *args)
 
 
 class OpenFilesPopup(QtWidgets.QDialog):
@@ -1237,7 +1280,9 @@ class CodeEditTabWidget(BaseTabWidget):
         :param args: optional addtional arguments (name and/or icon).
         """
         widget.dirty_changed.connect(self._on_dirty_changed)
-        super(CodeEditTabWidget, self).addTab(widget, *args)
+        index = super(CodeEditTabWidget, self).addTab(widget, *args)
+        self._set_tab_color(index)
+        return index
 
     def _on_dirty_changed(self, dirty):
         """
