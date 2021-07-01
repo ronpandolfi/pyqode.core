@@ -271,18 +271,8 @@ class BaseTabWidget(QtWidgets.QTabWidget):
         """
         Closes every editors tabs except the current one.
         """
-        current_widget = self.widget(self.tab_under_menu())
-        if self._try_close_dirty_tabs(
-            exept=current_widget,
-            tab_range=self._unpinned_range()
-        ):
-            i = 0
-            while self.count() > 1:
-                widget = self.widget(i)
-                if widget != current_widget:
-                    self.remove_tab(i)
-                else:
-                    i = 1
+        self.close_right()
+        self.close_left()
 
     def close_left(self):
         """
