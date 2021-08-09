@@ -73,7 +73,10 @@ class FileSystemTreeView(QtWidgets.QTreeView):
                 return True
             if fp in self._ignored_unused:
                 return False
-            rel_path = os.path.relpath(fp, self._root)
+            try:
+                rel_path = os.path.relpath(fp, self._root)
+            except ValueError:
+                return
             rel_root = os.path.join('..', os.path.basename(self._root))
             # We need to accept the root folder and all its parent folders
             if rel_path == '.' or rel_path == '..':
