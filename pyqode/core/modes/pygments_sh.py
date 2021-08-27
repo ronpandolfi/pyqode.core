@@ -294,17 +294,10 @@ class PygmentsSH(SyntaxHighlighter):
                 setattr(usd, "syntax_stack", self._lexer._saved_state_stack)
                 # Clean up for the next go-round.
                 del self._lexer._saved_state_stack
-
-            # spaces
-            text = original_text
-            expression = QRegExp(r'\s+')
-            index = expression.indexIn(text, 0)
-            while index >= 0:
-                index = expression.pos(0)
-                length = len(expression.cap(0))
-                self.setFormat(index, length, self._get_format(Whitespace))
-                index = expression.indexIn(text, index + length)
-
+            self._highlight_whitespaces(
+                original_text,
+                self._get_format(Whitespace)
+            )
             self._prev_block = block
 
     def _update_style(self):

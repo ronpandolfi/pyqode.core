@@ -300,13 +300,25 @@ class SyntaxHighlighter(QtGui.QSyntaxHighlighter, Mode):
         else:
             self.setDocument(None)
 
-    def _highlight_whitespaces(self, text):
-        index = self.WHITESPACES.indexIn(text, 0)
-        while index >= 0:
-            index = self.WHITESPACES.pos(0)
-            length = len(self.WHITESPACES.cap(0))
-            self.setFormat(index, length, self.formats['whitespace'])
-            index = self.WHITESPACES.indexIn(text, index + length)
+    def _highlight_whitespaces(self, text, fmt=None):
+        text_len = len(text)
+        if fmt is None:
+            fmt = self.formats['whitespace']
+        # This is a reimplementation from the previous regexp solution to
+        # finding whitespace, because using str.find() is much faster, which
+        # is important when highlighting large blocks. The logic is that we
+        # first find all the spaces, then all the tabs, and apply the
+        # whitespace style to them.
+        for ch in (' ', '\t'):
+            start = text.find(ch)
+            while start >= 0:
+                end = start + 1
+                while end < text_len:
+                    if text[end] != ch:
+                        break
+                    end += 1
+                self.setFormat(start, end - start, fmt)
+                start = text.find(ch, end)
 
     @staticmethod
     def _find_prev_non_blank_block(current_block):
