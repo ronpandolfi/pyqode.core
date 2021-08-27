@@ -142,6 +142,10 @@ class DraggableTabBar(TabBar):
         if m.tab != self.parent().widget(index):
             self.tab_move_request.emit(m.tab, index)
         event.acceptProposedAction()
+        
+    def setVisible(self, visible):
+        self._plus_button.setVisible(visible)
+        super(DraggableTabBar, self).setVisible(visible)
 
 
 class BaseTabWidget(QtWidgets.QTabWidget):
