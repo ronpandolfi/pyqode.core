@@ -69,6 +69,8 @@ class DraggableTabBar(TabBar):
             self._plus_button.clicked.connect(self._on_plus_button_clicked)
             self.parent().last_tab_closed.connect(self._move_plus_button)
             self.paintEvent = self._custom_paint_event
+        else:
+            self._plus_button = None
         
     def _move_plus_button(self):
         self._plus_button.move(
@@ -144,7 +146,8 @@ class DraggableTabBar(TabBar):
         event.acceptProposedAction()
         
     def setVisible(self, visible):
-        self._plus_button.setVisible(visible)
+        if self._plus_button is not None:
+            self._plus_button.setVisible(visible)
         super(DraggableTabBar, self).setVisible(visible)
 
 
