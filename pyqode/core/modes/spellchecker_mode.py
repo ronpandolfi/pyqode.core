@@ -13,10 +13,15 @@ WORD_PATTERN = r'(?P<word>\w\w\w+)'
 def run_spellcheck(request_data):
 
     import re
-    import spellchecker
     import string
 
-    sc = spellchecker.SpellChecker(request_data.get('language', 'en'))
+    global sc
+    try:
+        sc
+    except NameError:
+        print('initializing spellchecker')
+        import spellchecker
+        sc = spellchecker.SpellChecker(request_data.get('language', 'en'))
     ignore = request_data.get('ignore', [])
     messages = []
     code = request_data['code']
