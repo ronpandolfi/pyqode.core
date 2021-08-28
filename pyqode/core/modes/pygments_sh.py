@@ -294,10 +294,6 @@ class PygmentsSH(SyntaxHighlighter):
                 setattr(usd, "syntax_stack", self._lexer._saved_state_stack)
                 # Clean up for the next go-round.
                 del self._lexer._saved_state_stack
-            self._highlight_whitespaces(
-                original_text,
-                self._get_format(Whitespace)
-            )
             self._prev_block = block
 
     def _update_style(self):
