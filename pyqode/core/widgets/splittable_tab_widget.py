@@ -1724,7 +1724,7 @@ class SplittableCodeEditTabWidget(SplittableTabWidget):
             name = os.path.split(original_path)[1]
 
             use_parent_dir = False
-            for tab in self.widgets(from_root=True):
+            for tab in self.widgets(include_clones=True, from_root=True):
                 title = QtCore.QFileInfo(tab.file.path).fileName()
                 if title == name:
                     tw = tab.parent_tab_widget
