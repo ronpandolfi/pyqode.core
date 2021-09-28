@@ -122,6 +122,12 @@ class BackendManager(Manager):
         if self._share_id not in BackendManager.SHARE_COUNT:
             comm('new share_id: {}'.format(self._share_id))
             BackendManager.SHARE_COUNT[self._share_id] = []
+        # The current editor doesn't count as being one of the users of the
+        # backend, so remove any references to this editor.
+        BackendManager.SHARE_COUNT[self._share_id] = [
+            id_ for id_ in BackendManager.SHARE_COUNT[self._share_id]
+            if id_ != self._editor
+        ]
         # If we want to re-use existing backends, and a backend process is
         # already running, re-use it. We register the editor, so that we
         # can know, later on, if the backend was already stopped for this
