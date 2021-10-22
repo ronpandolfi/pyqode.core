@@ -181,4 +181,7 @@ class ExtendedSelectionMode(Mode):
         """
         Performs line selection (select the entire line).
         """
-        TextHelper(self.editor).select_whole_line()
+        cursor = self._editor.textCursor()
+        cursor.movePosition(cursor.StartOfLine)
+        cursor.movePosition(cursor.EndOfLine, mode=cursor.KeepAnchor)
+        self._editor.setTextCursor(cursor)
