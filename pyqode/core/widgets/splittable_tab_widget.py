@@ -697,6 +697,8 @@ class BaseTabWidget(QtWidgets.QTabWidget):
             tab.setFocus()
 
     def _on_tab_move_request(self, widget, new_index):
+        if widget is None:  # happens in rare conditions
+            return
         parent = widget.parent_tab_widget
         index = parent.indexOf(widget)
         if self.is_pinned(index):
