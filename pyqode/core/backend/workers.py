@@ -275,7 +275,10 @@ def image_annotations(data):
     haystack = _meaningful_code(data['code'])
     ret_val = []
     for needle, paths in _image_annotations.get(data['path'], {}).items():
+        n_match = 0
         for path in paths:
+            if n_match > 2:  # Not more than two matches
+                break
             if not os.path.exists(path):
                 continue
             prev_pos = 0
@@ -286,6 +289,7 @@ def image_annotations(data):
                 prev_pos = pos + 1
                 line = haystack[:pos].count('\n')
                 ret_val.append(('Image', 0, line, None, None, None, path))
+                n_match += 1
     return ret_val
 
 
