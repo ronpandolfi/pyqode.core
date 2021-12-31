@@ -787,9 +787,7 @@ class FileSystemContextMenu(QtWidgets.QMenu):
         elif system == 'Windows':
             pgm = 'explorer'
         else:
-            pgm = cls.get_file_explorer_command().split(' ')[0]
-            if os.path.isabs(pgm):
-                pgm = os.path.split(pgm)[1]
+            pgm = 'file explorer'
         return pgm.capitalize()
 
     def _on_show_in_explorer_triggered(self):
@@ -801,36 +799,20 @@ class FileSystemContextMenu(QtWidgets.QMenu):
         if cls._command is None:
             system = platform.system()
             if system == 'Linux':
-                explorer = cls.get_linux_file_explorer()
-                if explorer in ['nautilus', 'dolphin']:
-                    explorer_cmd = '%s --select %s' % (explorer, '%s')
-                else:
-                    explorer_cmd = '%s %s' % (explorer, '%s')
+                explorer_cmd = ['xdg-open', '{}']
             elif system == 'Windows':
-                explorer_cmd = 'explorer /select,%s'
+                explorer_cmd = ['explorer', '/select,{}']
             elif system == 'Darwin':
-                explorer_cmd = 'open -R %s'
+                explorer_cmd = ['open', '-R', '{}']
             cls._command = explorer_cmd
-            return explorer_cmd
-        else:
-            return cls._command
-
-    @classmethod
-    def set_file_explorer_command(cls, command):
-        pgm = command.split(' ')[0]
-        if os.path.isabs(pgm):
-            pgm = os.path.split(pgm)[1]
-        cls._explorer = pgm
-        cls._command = command
+        return cls._command[:]
 
     @classmethod
     def show_in_explorer(cls, path, parent):
-        try:
-            cmd = cls.get_file_explorer_command() % os.path.normpath(path)
-            _logger().info('show file in explorer: %s' % cmd)
-            args = cmd.split(' ')
-            subprocess.Popen(args)
-        except Exception as e:
-            QtWidgets.QMessageBox.warning(
-                parent, _('Open in explorer'),
-                _('Failed to open file in explorer.\n\n%s') % str(e))
+        path = os.path.normpath(path)
+        if os.path.isfile(path):
+            path = os.path.dirname(path)
+        cmd = cls.get_file_explorer_command()
+        cmd[-1] = cmd[-1].format(path)
+        _logger().info('show file in explorer: %s' % cmd)
+        subprocess.Popen(cmd)
