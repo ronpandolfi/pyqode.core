@@ -20,7 +20,7 @@ from pygments.styles import get_style_by_name, get_all_styles
 from pygments.token import Whitespace, Comment, Token
 from pygments.util import ClassNotFound
 from pyqode.qt import QtGui
-from pyqode.qt.QtCore import QRegExp
+from pyqode.qt.QtCore import QRegExp, QTimer
 
 from pyqode.core.api.syntax_highlighter import (
     SyntaxHighlighter, ColorScheme, TextBlockUserData)
@@ -261,40 +261,47 @@ class PygmentsSH(SyntaxHighlighter):
         :param text: text of the block to highlith
         :param block: block to highlight
         """
-        if self.color_scheme.name != self._pygments_style:
-            self._pygments_style = self.color_scheme.name
-            self._update_style()
         original_text = text
-        if self.editor and self._lexer and self.enabled:
-            if block.blockNumber():
-                prev_data = self._prev_block.userData()
-                if prev_data:
-                    if hasattr(prev_data, "syntax_stack"):
-                        self._lexer._saved_state_stack = prev_data.syntax_stack
-                    elif hasattr(self._lexer, '_saved_state_stack'):
-                        del self._lexer._saved_state_stack
+        if not self.editor or not self._lexer or not self.enabled:
+            return
+        if block.blockNumber():
+            prev_data = self._prev_block.userData()
+            if prev_data:
+                if hasattr(prev_data, "syntax_stack"):
+                    self._lexer._saved_state_stack = prev_data.syntax_stack
+                elif hasattr(self._lexer, '_saved_state_stack'):
+                    del self._lexer._saved_state_stack
 
-            # Lex the text using Pygments
-            index = 0
-            usd = block.userData()
-            if usd is None:
-                usd = TextBlockUserData()
-                block.setUserData(usd)
-            tokens = list(self._lexer.get_tokens(text))
-            for token, text in tokens:
-                length = len(text)
-                fmt = self._get_format(token)
-                if token in [Token.Literal.String, Token.Literal.String.Doc,
-                             Token.Comment]:
-                    fmt.setObjectType(fmt.UserObject)
-                self.setFormat(index, length, fmt)
-                index += length
-
-            if hasattr(self._lexer, '_saved_state_stack'):
-                setattr(usd, "syntax_stack", self._lexer._saved_state_stack)
-                # Clean up for the next go-round.
-                del self._lexer._saved_state_stack
-            self._prev_block = block
+        # Lex the text using Pygments
+        index = 0
+        usd = block.userData()
+        if usd is None:
+            usd = TextBlockUserData()
+            usd.last_token = None
+            block.setUserData(usd)
+        tokens = list(self._lexer.get_tokens(text))
+        for token, text in tokens:
+            length = len(text)
+            fmt = self._get_format(token)
+            if token in [Token.Literal.String, Token.Literal.String.Doc,
+                         Token.Comment]:
+                fmt.setObjectType(fmt.UserObject)
+            self.setFormat(index, length, fmt)
+            index += length
+        if hasattr(self._lexer, '_saved_state_stack'):
+            setattr(usd, "syntax_stack", self._lexer._saved_state_stack)
+            # Clean up for the next go-round.
+            del self._lexer._saved_state_stack
+        self._prev_block = block
+        # If the current block now ends with a comment but didn't before, or
+        # now doesn't end with a commment but did before, then we request a
+        # rehighlight of the entire document. This is a cheap fix to deal with
+        # multiline comments, which affect lines beyond the current block.
+        if not self._in_rehighlight and token != usd.last_token and \
+                (token == Token.Comment or usd.last_token == Token.Comment):
+            self._in_rehighlight = True
+            QTimer.singleShot(100, self.rehighlight)
+        usd.last_token = token
 
     def _update_style(self):
         """ Sets the style to the specified Pygments style.

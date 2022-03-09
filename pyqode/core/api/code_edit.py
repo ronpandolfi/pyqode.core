@@ -652,7 +652,11 @@ class CodeEdit(QtWidgets.QPlainTextEdit):
         self._modified_lines.clear()
         import time
         t = time.time()
+        if hasattr(self, 'syntax_highlighter'):
+            self.syntax_highlighter._in_rehighlight = True
         super(CodeEdit, self).setPlainText(txt)
+        if hasattr(self, 'syntax_highlighter'):
+            self.syntax_highlighter._in_rehighlight = False
         _logger().log(5, 'setPlainText duration: %fs' % (time.time() - t))
         self.new_text_set.emit()
         self.redoAvailable.emit(False)

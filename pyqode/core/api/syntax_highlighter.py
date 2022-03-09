@@ -291,6 +291,7 @@ class SyntaxHighlighter(QtGui.QSyntaxHighlighter, Mode):
         #: to work. Default is None
         self.fold_detector = None
         self.WHITESPACES = QtCore.QRegExp(r'\s+')
+        self._in_rehighlight = False
 
     def on_state_changed(self, state):
         if self._on_close:
@@ -364,6 +365,7 @@ class SyntaxHighlighter(QtGui.QSyntaxHighlighter, Mode):
         """
         Rehighlight the entire document, may be slow.
         """
+        self._in_rehighlight = True
         start = time.time()
         QtWidgets.QApplication.setOverrideCursor(
             QtGui.QCursor(QtCore.Qt.WaitCursor))
@@ -375,6 +377,7 @@ class SyntaxHighlighter(QtGui.QSyntaxHighlighter, Mode):
         QtWidgets.QApplication.restoreOverrideCursor()
         end = time.time()
         _logger().debug('rehighlight duration: %fs' % (end - start))
+        self._in_rehighlight = False
 
     def on_install(self, editor):
         super(SyntaxHighlighter, self).on_install(editor)
