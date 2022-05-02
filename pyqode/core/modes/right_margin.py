@@ -75,8 +75,8 @@ class RightMarginMode(Mode):
                            self.editor.zoom_level)
         metrics = QtGui.QFontMetricsF(font)
         pos = self._margin_pos
-        offset = self.editor.contentOffset().x() + \
-            self.editor.document().documentMargin()
+        offset = int(self.editor.contentOffset().x() + 
+                     self.editor.document().documentMargin())
         x80 = round(metrics.width(' ') * pos) + offset
         painter = QtGui.QPainter(self.editor.viewport())
         painter.setPen(self._pen)
