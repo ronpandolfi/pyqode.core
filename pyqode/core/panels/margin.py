@@ -38,7 +38,7 @@ class MarginPanel(Panel):
         margin = (
             self.editor.width()
             - self.editor.fontMetrics().width("_") * self._nchar
-        ) / 2 - right_margin - left_margin
+        ) // 2 - right_margin - left_margin
         return QtCore.QSize(max(0, margin), 50)
 
     def on_install(self, editor):
