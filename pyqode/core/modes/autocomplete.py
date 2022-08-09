@@ -67,6 +67,8 @@ class AutoCompleteMode(Mode):
             )
 
     def _on_key_pressed(self, event):
+        if event.isAccepted():
+            return
         txt = event.text()
         cursor = self.editor.textCursor()
         next_char = self._helper.get_right_character()
