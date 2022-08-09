@@ -17,6 +17,10 @@ class ImageAnnotationsPanel(CheckerPanel):
         self._shown_size_hint = QtCore.QSize(256, 256)
         self._hidden_size_hint = QtCore.QSize(1, 1)
         self._size_hint = self._hidden_size_hint
+        self._update_size_timer = QtCore.QTimer()
+        self._update_size_timer.timeout.connect(self._update_size)
+        self._update_size_timer.setSingleShot(True)
+        self._update_size_timer.setInterval(1000)
         CheckerPanel.__init__(self)
     
     def sizeHint(self):
@@ -39,4 +43,12 @@ class ImageAnnotationsPanel(CheckerPanel):
         if new_hint == self._size_hint:
             return
         self._size_hint = new_hint
+        if new_hint == self._hidden_size_hint:
+            if self._update_size_timer.isActive():
+                self._update_size_timer.stop()
+            self._update_size_timer.start()
+        else:
+            self._update_size()
+
+    def _update_size(self):
         self.editor.panels.refresh()
