@@ -19,6 +19,7 @@ class CheckerPanel(Panel):
 
     def __init__(self):
         super(CheckerPanel, self).__init__()
+        self._visible_markers = []
         self._previous_line = -1
         self.scrollable = True
         self._job_runner = DelayJobRunner(delay=100)
@@ -82,6 +83,7 @@ class CheckerPanel(Panel):
         icon_size = self._icon_size()
         vertical_offset = self._vertical_offset()
         multiple_markers_icon = self._multiple_markers_icon()
+        self._visible_markers = []
         for top, block_nbr, block in self.editor.visible_blocks:
             user_data = block.userData()
             if not user_data or not user_data.messages:
@@ -104,28 +106,20 @@ class CheckerPanel(Panel):
             rect.setY(top + vertical_offset)
             rect.setSize(actual_icon_size)
             icon.paint(painter, rect)
+            self._visible_markers.append((markers, rect))
         self._message_count(message_count)
 
     def mouseMoveEvent(self, event):
-        # Requests a tooltip if the cursor is currently over a marker.
-        line = TextHelper(self.editor).line_nbr_from_position(event.pos().y())
-        if line < 0:
-            return
-        markers = self.marker_for_line(line)
-        if markers:
+        for markers, rect in self._visible_markers:
+            if not rect.contains(event.pos()):
+                continue
             tooltips = [marker.tooltip() for marker in markers]
-            if self._previous_line != line:
-                ypos = TextHelper(self.editor).line_pos_from_number(
-                    markers[0].line
-                )
-                self._job_runner.request_job(
-                    self._display_tooltip,
-                    '<pre>{}</pre>'.format('\n'.join(tooltips)),
-                    ypos
-                )
+            self._job_runner.request_job(
+                self._display_tooltip,
+                '<pre>{}</pre>'.format('\n'.join(tooltips)), rect.top())
+            break
         else:
             self._job_runner.cancel_requests()
-        self._previous_line = line
         
     def mousePressEvent(self, event):
         line = TextHelper(self.editor).line_nbr_from_position(event.pos().y())
@@ -147,7 +141,7 @@ class CheckerPanel(Panel):
         Display tooltip at the specified top position.
         """
         QtWidgets.QToolTip.showText(self.mapToGlobal(QtCore.QPoint(
-            self.sizeHint().width(), top)), tooltip, self)
+            0, top)), tooltip, self)
 
     def _message_count(self, n):
         pass
