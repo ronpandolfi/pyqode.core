@@ -111,6 +111,9 @@ class CheckerMessage(object):
     def tooltip(self):
         return self.checker_mode.message_tooltip(self)
         
+    def widget(self):
+        return self.checker_mode.message_widget(self)
+        
     def show_on_panel(self, panel):
         return self.checker_mode.show_on_panel(panel)
         
@@ -415,6 +418,9 @@ class CheckerMode(Mode, QtCore.QObject):
         
     def message_tooltip(self, msg):
         return msg.description
+    
+    def message_widget(self, msg):
+        return None
 
     def show_on_panel(self, panel):
         return panel.__class__.__name__ == 'CheckerPanel'

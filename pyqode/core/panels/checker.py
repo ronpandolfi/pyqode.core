@@ -20,7 +20,8 @@ class CheckerPanel(Panel):
     def __init__(self):
         super(CheckerPanel, self).__init__()
         self._visible_markers = []
-        self._previous_line = -1
+        self._tooltip_shown = False
+        self._current_widget = None
         self.scrollable = True
         self._job_runner = DelayJobRunner(delay=100)
         self.setMouseTracking(True)
@@ -110,38 +111,55 @@ class CheckerPanel(Panel):
         self._message_count(message_count)
 
     def mouseMoveEvent(self, event):
+        if self._tooltip_shown or self._current_widget is not None:
+            return
         for markers, rect in self._visible_markers:
             if not rect.contains(event.pos()):
                 continue
-            tooltips = [marker.tooltip() for marker in markers]
+            tooltips = []
+            for marker in markers:
+                widget = marker.widget()
+                if widget is not None:
+                    self._display_widget(widget, rect.top())
+                    return
+                tooltips.append(marker.tooltip())
             self._job_runner.request_job(
                 self._display_tooltip,
                 '<pre>{}</pre>'.format('\n'.join(tooltips)), rect.top())
-            break
-        else:
-            self._job_runner.cancel_requests()
+            return
+        self._job_runner.cancel_requests()
         
     def mousePressEvent(self, event):
-        line = TextHelper(self.editor).line_nbr_from_position(event.pos().y())
-        if line < 0:
-            return
-        for marker in self.marker_for_line(line):
-            marker.clicked(event)
-            break
+        for markers, rect in self._visible_markers:
+            if not rect.contains(event.pos()):
+                continue
+            for marker in markers:
+                marker.clicked(event)
+                break
 
     def leaveEvent(self, *args):
         """
         Hide tooltip when leaving the panel region.
         """
-        QtWidgets.QToolTip.hideText()
-        self._previous_line = -1
+        if self._tooltip_shown:
+            QtWidgets.QToolTip.hideText()
+            self._tooltip_shown = False
+        if self._current_widget is not None:
+            self._current_widget.hide()
+            self._current_widget = None
 
     def _display_tooltip(self, tooltip, top):
         """
         Display tooltip at the specified top position.
         """
+        self._tooltip_shown = True
         QtWidgets.QToolTip.showText(self.mapToGlobal(QtCore.QPoint(
             0, top)), tooltip, self)
+        
+    def _display_widget(self, widget, top):
+        self._current_widget = widget
+        widget.show()
+        widget.move(self.mapToGlobal(QtCore.QPoint(-widget.width(), top)))
 
     def _message_count(self, n):
         pass
