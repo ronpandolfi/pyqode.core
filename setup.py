@@ -81,7 +81,6 @@ setup(
     long_description=readme(),
     install_requires=[
         pygments_req,
- qtpyyqode.qt',
         'future',
         'qtawesome',
         'pathspec'
