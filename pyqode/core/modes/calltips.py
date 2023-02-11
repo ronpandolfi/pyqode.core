@@ -5,7 +5,7 @@ Contains a base class for a calltips mode.
 import logging
 from pyqode.core.api import Mode, TextHelper
 from pyqode.core.api.panel import Panel
-from pyqode.qt import QtCore, QtWidgets
+from qtpy import QtCore, QtWidgets
 
 MAX_CALLTIP_WIDTH = 80
 

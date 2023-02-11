@@ -9,7 +9,7 @@ import io
 import uuid
 import weakref
 
-from pyqode.qt import QtCore, QtWidgets, QtGui
+from qtpy import QtCore, QtWidgets, QtGui
 from pyqode.core.api import utils
 from pyqode.core import icons
 from pyqode.core.cache import Cache

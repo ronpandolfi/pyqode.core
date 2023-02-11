@@ -4,7 +4,7 @@ Contains a line-sorter mode.
 """
 from pyqode.core.api.mode import Mode
 from pyqode.core.api.utils import TextHelper
-from pyqode.qt.QtWidgets import QAction, QMenu
+from qtpy.QtWidgets import QAction, QMenu
 
 
 class LineSorterMode(Mode):

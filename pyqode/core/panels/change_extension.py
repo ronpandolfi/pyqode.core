@@ -8,9 +8,9 @@ SplittableCodeEditTabWidget.
 import os
 from pyqode.core.api.panel import Panel
 from pyqode.core import icons
-from pyqode.qt.QtCore import QTimer, Signal, QRegExp
-from pyqode.qt.QtGui import QRegExpValidator
-from pyqode.qt.QtWidgets import (
+from qtpy.QtCore import QTimer, Signal, QRegExp
+from qtpy.QtGui import QRegExpValidator
+from qtpy.QtWidgets import (
     QWidget,
     QLabel,
     QHBoxLayout,

@@ -5,7 +5,7 @@ import logging
 import socket
 import sys
 import string
-from pyqode.qt import QtCore
+from qtpy import QtCore
 from pyqode.core.api.client import JsonTcpClient, BackendProcess
 from pyqode.core.api.manager import Manager
 from pyqode.core.backend import NotRunning, echo_worker

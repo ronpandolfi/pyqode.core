@@ -4,7 +4,7 @@ This module contains the image annotations mode. This mode allows annotations
 to be sent to the backend, and adds annotations as user data to text blocks.
 The annotations are shown in the ImageAnnotationsPanel.
 """
-from pyqode.qt import QtGui, QtCore, QtWidgets
+from qtpy import QtGui, QtCore, QtWidgets
 from pyqode.core.modes import CheckerMode
 from pyqode.core.backend.workers import (
     image_annotations,

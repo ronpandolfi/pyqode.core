@@ -1,7 +1,7 @@
 """
 This module contains the smart backspace mode
 """
-from pyqode.qt.QtCore import Qt
+from qtpy.QtCore import Qt
 from pyqode.core.api import Mode
 
 

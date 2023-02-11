@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """ Contains the AutoCompleteMode """
 import logging
-from pyqode.qt import QtCore, QtGui
+from qtpy import QtCore, QtGui
 from pyqode.core.api import TextHelper
 from pyqode.core.api.mode import Mode
 

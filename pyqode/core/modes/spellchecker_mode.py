@@ -2,7 +2,7 @@
 """
 This module contains the spell checker mode
 """
-from pyqode.qt import QtWidgets
+from qtpy import QtWidgets
 from pyqode.core.modes import CheckerMode
 
 

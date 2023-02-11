@@ -6,7 +6,7 @@ whitespaces.
 
 """
 import sys
-from pyqode.qt import QtWidgets, QtGui
+from qtpy import QtWidgets, QtGui
 from pyqode.core import api
 from pyqode.core import modes
 from pyqode.core import panels
@@ -44,4 +44,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

@@ -6,7 +6,7 @@ ImageAnnotationsMode.
 """
 
 from pyqode.core.panels import CheckerPanel
-from pyqode.qt import QtCore
+from qtpy import QtCore
 
 
 class ImageAnnotationsPanel(CheckerPanel):

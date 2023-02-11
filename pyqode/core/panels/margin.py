@@ -3,7 +3,7 @@
 This module contains the margin panel
 """
 from pyqode.core.api.panel import Panel
-from pyqode.qt import QtCore
+from qtpy import QtCore
 
 
 class MarginPanel(Panel):

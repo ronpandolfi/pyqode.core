@@ -8,7 +8,7 @@ Checker panels:
 from pyqode.core import icons
 from pyqode.core.api import DelayJobRunner, TextHelper
 from pyqode.core.api.panel import Panel
-from pyqode.qt import QtCore, QtGui, QtWidgets
+from qtpy import QtCore, QtGui, QtWidgets
 
 
 class CheckerPanel(Panel):

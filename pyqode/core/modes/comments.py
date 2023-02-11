@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import os
 from pyqode.core import api, icons
-from pyqode.qt.QtCore import Qt
-from pyqode.qt.QtWidgets import QAction
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QAction
 
 
 class CommentsMode(api.Mode):

@@ -9,7 +9,7 @@ import platform
 import shutil
 import subprocess
 from pathspec import PathSpec
-from pyqode.qt import QtCore, QtGui, QtWidgets
+from qtpy import QtCore, QtGui, QtWidgets
 from pyqode.core import icons
 
 
