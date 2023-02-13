@@ -466,7 +466,7 @@ class InteractiveConsole(QTextEdit):
 
 
 if __name__ == '__main__':
-    fqtpye.qt import QtWidgets
+    from qtpy import QtWidgets
     app = QtWidgets.QApplication([])
     console = InteractiveConsole()
     console.start_process('cal')

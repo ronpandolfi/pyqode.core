@@ -198,7 +198,7 @@ class JsonTcpClient(QtNetwork.QTcpSocket):
         self.is_connected = False
         self._closed = False
         self.connected.connect(self._on_connected)
-        self.error.connect(self._on_error)
+        self.errorOccurred.connect(self._on_error)
         self.disconnected.connect(self._on_disconnected)
         self.readyRead.connect(self._on_ready_read)
         self._connect()
@@ -348,7 +348,7 @@ class BackendProcess(QtCore.QProcess):
     def __init__(self, parent):
         super(BackendProcess, self).__init__(parent)
         self.started.connect(self._on_process_started)
-        self.error.connect(self._on_process_error)
+        self.errorOccurred.connect(self._on_process_error)
         self.finished.connect(self._on_process_finished)
         self.readyReadStandardOutput.connect(self._on_process_stdout_ready)
         self.readyReadStandardError.connect(self._on_process_stderr_ready)

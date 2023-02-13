@@ -374,7 +374,7 @@ class CodeCompletionMode(Mode, QtCore.QObject):
         def _handle_completer_events():
             nav_key = self._is_navigation_key(event)
             mod = QtCore.Qt.ControlModifier
-            ctrl = int(event.modifiers() & mod) == mod
+            ctrl = event.modifiers() == mod
             # complete
             if event.key() in [
                     QtCore.Qt.Key_Enter, QtCore.Qt.Key_Return,
@@ -432,7 +432,7 @@ class CodeCompletionMode(Mode, QtCore.QObject):
             elif len(word) >= self._trigger_len and event.text() not in \
                     self.editor.word_separators:
                 # Length trigger
-                if int(event.modifiers()) in [
+                if event.modifiers() in [
                         QtCore.Qt.NoModifier, QtCore.Qt.ShiftModifier]:
                     self.request_completion()
                 else:
@@ -563,7 +563,7 @@ class CodeCompletionMode(Mode, QtCore.QObject):
         """
         modifier = (QtCore.Qt.MetaModifier if sys.platform == 'darwin' else
                     QtCore.Qt.ControlModifier)
-        valid_modifier = int(event.modifiers() & modifier) == modifier
+        valid_modifier = event.modifiers() == modifier
         valid_key = event.key() == self._trigger_key
         return valid_key and valid_modifier
 

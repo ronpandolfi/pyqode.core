@@ -20,7 +20,7 @@ from pygments.styles import get_style_by_name, get_all_styles
 from pygments.token import Whitespace, Comment, Token
 from pygments.util import ClassNotFound
 from qtpy import QtGui
-from qtpy.QtCore import QRegExp, QTimer
+from qtpy.QtCore import QRegularExpression, QTimer
 
 from pyqode.core.api.syntax_highlighter import (
     SyntaxHighlighter, ColorScheme, TextBlockUserData)

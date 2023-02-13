@@ -903,11 +903,11 @@ class CodeEdit(QtWidgets.QPlainTextEdit):
     def eventFilter(self, obj, event):
         if obj == self and event.type() == QtCore.QEvent.KeyPress:
             if event.key() == QtCore.Qt.Key_X and \
-                    int(event.modifiers()) == QtCore.Qt.ControlModifier:
+                    event.modifiers() == QtCore.Qt.ControlModifier:
                 self.cut()
                 return True
             if event.key() == QtCore.Qt.Key_C and \
-                    int(event.modifiers()) == QtCore.Qt.ControlModifier:
+                    event.modifiers() == QtCore.Qt.ControlModifier:
                 self.copy()
                 return True
         return False
@@ -1055,9 +1055,9 @@ class CodeEdit(QtWidgets.QPlainTextEdit):
                 self.un_indent()
                 event.accept()
             elif event.key() == QtCore.Qt.Key_Home and \
-                    int(event.modifiers()) & QtCore.Qt.ControlModifier == 0:
+                    event.modifiers() & QtCore.Qt.ControlModifier == 0:
                 self._do_home_key(
-                    event, int(event.modifiers()) & QtCore.Qt.ShiftModifier)
+                    event, event.modifiers() & QtCore.Qt.ShiftModifier)
             if not event.isAccepted():
                 event.setAccepted(initial_state)
                 super(CodeEdit, self).keyPressEvent(event)
@@ -1312,7 +1312,7 @@ class CodeEdit(QtWidgets.QPlainTextEdit):
         action = QtWidgets.QAction(_('Swap line up'), self)
         action.setIcon(icons.icon(qta_name='fa.arrow-up'))
         action.setShortcut(QtGui.QKeySequence(
-            QtCore.Qt.AltModifier + QtCore.Qt.Key_Up))
+            QtCore.Qt.AltModifier | QtCore.Qt.Key_Up))
         action.triggered.connect(self.swapLineUp)
         self.add_action(action, sub_menu=None)
         self.action_swap_line_up = action
@@ -1320,7 +1320,7 @@ class CodeEdit(QtWidgets.QPlainTextEdit):
         action = QtWidgets.QAction(_('Swap line down'), self)
         action.setIcon(icons.icon(qta_name='fa.arrow-down'))
         action.setShortcut(QtGui.QKeySequence(
-            QtCore.Qt.AltModifier + QtCore.Qt.Key_Down))
+            QtCore.Qt.AltModifier | QtCore.Qt.Key_Down))
         action.triggered.connect(self.swapLineDown)
         self.add_action(action, sub_menu=None)
         self.action_swap_line_down = action

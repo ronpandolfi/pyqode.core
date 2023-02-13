@@ -8,8 +8,8 @@ SplittableCodeEditTabWidget.
 import os
 from pyqode.core.api.panel import Panel
 from pyqode.core import icons
-from qtpy.QtCore import QTimer, Signal, QRegExp
-from qtpy.QtGui import QRegExpValidator
+from qtpy.QtCore import QTimer, Signal, QRegularExpression
+from qtpy.QtGui import QRegularExpressionValidator
 from qtpy.QtWidgets import (
     QWidget,
     QLabel,
@@ -80,7 +80,8 @@ class ChangeExtensionPanel(Panel):
         self._layout = QHBoxLayout(self)
         self._label = QLabel(_('Change extension to'))
         self._ext_edit = QLineEdit(self.splitter.default_extension(), self)
-        self._ext_edit.setValidator(QRegExpValidator(QRegExp(r'\.\w+'), self))
+        self._ext_edit.setValidator(QRegularExpressionValidator(
+            QRegularExpression(r'\.\w+'), self))
         self._ext_edit.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self._apply_button = QPushButton(_('Apply'), self)
         self._apply_button.setIcon(icons.icon(qta_name='fa.check'))

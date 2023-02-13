@@ -286,11 +286,11 @@ class SyntaxHighlighter(QtGui.QSyntaxHighlighter, Mode):
         if not color_scheme:
             color_scheme = ColorScheme('qt')
         self._color_scheme = color_scheme
-        self._spaces_ptrn = QtCore.QRegExp(r'[ \t]+')
+        self._spaces_ptrn = QtCore.QRegularExpression(r'[ \t]+')
         #: Fold detector. Set it to a valid FoldDetector to get code folding
         #: to work. Default is None
         self.fold_detector = None
-        self.WHITESPACES = QtCore.QRegExp(r'\s+')
+        self.WHITESPACES = QtCore.QRegularExpression(r'\s+')
         self._in_rehighlight = False
 
     def on_state_changed(self, state):

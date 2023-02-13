@@ -116,7 +116,7 @@ class ExtendedSelectionMode(Mode):
             self.perform_extended_selection(event=event)
         elif modifiers & self.matched_sel_modifier:
             self.perform_matched_selection(event=event)
-        elif int(modifiers) == QtCore.Qt.NoModifier:
+        elif modifiers == QtCore.Qt.NoModifier:
             self.perform_word_selection(event=event)
             self.editor.mouse_pressed.connect(self._on_triple_click)
             QtCore.QTimer.singleShot(
