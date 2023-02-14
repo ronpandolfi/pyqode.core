@@ -139,7 +139,7 @@ class DraggableTabBar(TabBar):
     def dropEvent(self, event):
         # drop a tab in a split (may be the same split or another one).
         m = event.mimeData()
-        index = self.tabAt(event.pos())
+        index = self.tabAt(event.position().toPoint())
         # Tell interested objects that a tab should be moved.
         if m.tab != self.parent().widget(index):
             self.tab_move_request.emit(m.tab, index)
