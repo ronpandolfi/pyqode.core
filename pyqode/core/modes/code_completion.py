@@ -25,6 +25,7 @@ NAVIGATION_KEYS = (
     QtCore.Qt.Key_Space
 )
 MIN_WIDTH = 200
+icon_cache = {}
 
 
 def _logger():
@@ -673,6 +674,20 @@ class CodeCompletionMode(Mode, QtCore.QObject):
     def _show_completions(self, completions):
         self._update_model(completions)
         self._show_popup()
+        
+    def _icon(self, name):
+        if isinstance(name, list):
+            name, fallback = name
+        else:
+            fallback = None
+        if name in icon_cache:
+            return icon_cache[name]
+        if fallback is None:
+            icon = QtGui.QIcon(name)
+        else:
+            icon = QtGui.QIcon.fromTheme(name, self._icon(fallback))
+        icon_cache[name] = icon
+        return icon
 
     def _update_model(self, completions):
         """
@@ -695,12 +710,7 @@ class CodeCompletionMode(Mode, QtCore.QObject):
             if 'tooltip' in completion and completion['tooltip']:
                 self._tooltips[name] = completion['tooltip']
             if 'icon' in completion:
-                icon = completion['icon']
-                if isinstance(icon, list):
-                    icon = QtGui.QIcon.fromTheme(icon[0], QtGui.QIcon(icon[1]))
-                else:
-                    icon = QtGui.QIcon(icon)
-                item.setData(QtGui.QIcon(icon),
+                item.setData(self._icon(completion['icon']),
                              QtCore.Qt.DecorationRole)
             cc_model.appendRow(item)
         try:
