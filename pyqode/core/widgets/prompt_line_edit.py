@@ -6,11 +6,6 @@ import os
 from pyqode.core import icons
 from qtpy import QtWidgets, QtCore, QtGui
 
-# from qtpy import PYQT4_API
-# from qtpy import PYQT5_API
-# from qtpy import PYQT6_API
-# from qtpy import PYSIDE_API
-
 
 class PromptLineEdit(QtWidgets.QLineEdit):
 
@@ -58,24 +53,9 @@ class PromptLineEdit(QtWidgets.QLineEdit):
 
     def paintEvent(self, event):
         super(PromptLineEdit, self).paintEvent(event)
-
-        qt_api = os.environ['QT_API'].lower()
         if self._prompt_text and not self.text() and self.isEnabled():
-            if qt_api in PYQT4_API:
-                from PyQt4.QtGui import QStyleOptionFrameV3
-                option = QStyleOptionFrameV3()
-            elif qt_api in PYSIDE_API:
-                from PySide.QtGui import QStyleOptionFrameV3
-                option = QStyleOptionFrameV3()
-            elif qt_api in PYQT5_API:
-                from PyQt5.QtWidgets import QStyleOptionFrame
-                option = QStyleOptionFrame()
-            else:
-                msg = 'Qt bindings "%s" is not supported' % qt_api
-                raise PythonQtError(msg)
-
+            option = QtWidgets.QStyleOptionFrame()
             self.initStyleOption(option)
-
             left, top, right, bottom = self.getTextMargins()
 
             va = self.style().visualAlignment(

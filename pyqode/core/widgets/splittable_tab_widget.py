@@ -1044,10 +1044,6 @@ class SplittableTabWidget(QtWidgets.QSplitter):
         clone = base.split()
         if not clone:
             return
-        if orientation == int(QtCore.Qt.Horizontal):
-            orientation = QtCore.Qt.Horizontal
-        else:
-            orientation = QtCore.Qt.Vertical
         self.setOrientation(orientation)
         splitter = self._make_splitter()
         splitter.show()
