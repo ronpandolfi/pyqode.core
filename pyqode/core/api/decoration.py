@@ -66,7 +66,10 @@ class TextDecoration(QtWidgets.QTextEdit.ExtraSelection):
         self.cursor = QtGui.QTextCursor(cursor_or_bloc_or_doc)
         if full_width:
             self.set_full_width(full_width)
-        self.cursor.movePosition(self.cursor.Start, self.cursor.MoveAnchor)
+        if not (start_line is None or start_pos is None or end_line is None
+                or end_pos is None):
+            self.cursor.movePosition(self.cursor.Start,
+                                     self.cursor.MoveAnchor)
         if start_line is not None:
             self.cursor.movePosition(
                 self.cursor.NextBlock,
