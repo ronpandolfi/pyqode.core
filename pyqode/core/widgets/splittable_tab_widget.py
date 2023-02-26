@@ -724,7 +724,7 @@ class BaseTabWidget(QtWidgets.QTabWidget):
 
     def dropEvent(self, event):
         m = event.mimeData()
-        index = self.tabBar().tabAt(event.pos())
+        index = self.tabBar().tabAt(event.position().toPoint())
         # Tell interested objects that a tab should be moved.
         if m.tab != self.widget(index):
             self._on_tab_move_request(m.tab, index)
