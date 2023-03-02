@@ -139,7 +139,12 @@ class DraggableTabBar(TabBar):
     def dropEvent(self, event):
         # drop a tab in a split (may be the same split or another one).
         m = event.mimeData()
-        index = self.tabAt(event.position().toPoint())
+        try:
+            pos = event.position().toPoint()
+        except AttributeError:
+            # PyQt5 fallback
+            pos = event.pos()
+        index = self.tabAt(pos)
         # Tell interested objects that a tab should be moved.
         if m.tab != self.parent().widget(index):
             self.tab_move_request.emit(m.tab, index)
@@ -724,7 +729,12 @@ class BaseTabWidget(QtWidgets.QTabWidget):
 
     def dropEvent(self, event):
         m = event.mimeData()
-        index = self.tabBar().tabAt(event.position().toPoint())
+        try:
+            pos = event.position().toPoint()
+        except AttributeError:
+            # PyQt5 fallback
+            pos = event.pos()
+        index = self.tabBar().tabAt(pos)
         # Tell interested objects that a tab should be moved.
         if m.tab != self.widget(index):
             self._on_tab_move_request(m.tab, index)
