@@ -29,8 +29,8 @@ Requirements
 
 pyqode.core depends on the following libraries:
 
-- Python 2 (**>=2.7**) or Python 3 (**>= 3.2**)
-- PyQt5 or PyQt4 or PySide
+- Python 3 (>= 3.7)
+- PyQt5 or PyQt6 or PySide
 - pygments
 - pyqode.qt
 - future

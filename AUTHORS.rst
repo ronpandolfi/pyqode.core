@@ -7,3 +7,4 @@ Contributors
 ============
 
 Andres Granada (@ogranada)
+Sebastiaan Mathôt (@smathot)
