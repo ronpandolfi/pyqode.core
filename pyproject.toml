@@ -2,7 +2,7 @@
 requires = ["flit_core >=3.4"]
 build-backend = "flit_core.buildapi"
 [project]
-name = "pyqode.core"
+name = "pyqode-core"
 authors = [
     {name = "Colin Duquesnoy", email = "colin.duquesnoy@gmail.com"},
     {name = "Sebastiaan Mathôt", email = "s.mathot@cogsci.nl"}

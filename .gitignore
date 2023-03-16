@@ -53,3 +53,4 @@ deb_dist
 /.eggs/
 .rapunzel.yaml
 release.sh
+build-deb.sh
