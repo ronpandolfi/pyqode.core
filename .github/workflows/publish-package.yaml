@@ -31,6 +31,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install build flit
         sed -i -e '0,/name = "pyqode-core"/{s/name = "pyqode-core"/name = "pyqode.core"/}' pyproject.toml
+        mv dist/pyqode_core-* dist/pyqode.core-*
         flit build --format=wheel
     - name: Build package
       run: python -m build
