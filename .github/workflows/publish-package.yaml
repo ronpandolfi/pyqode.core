@@ -30,12 +30,12 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install build flit
+    - name: Build package
+      run: |
         sed -i -e '0,/name = "pyqode-python"/{s/name = "pyqode-core"/name = "pyqode.core"/}' pyproject.toml
-        flit build --format=wheel
+        python -m build
         for file in dist/pyqode_core-*; do mv "$file" "${file//_core/.core}"; done
         for file in dist/pyqode-core-*; do mv "$file" "${file//-core/.core}"; done
-    - name: Build package
-      run: python -m build
     - name: Publish package
       uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
       with:
