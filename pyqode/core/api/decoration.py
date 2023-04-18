@@ -59,46 +59,58 @@ class TextDecoration(QtWidgets.QTextEdit.ExtraSelection):
 
         .. note:: Use the cursor selection if startPos and endPos are none.
         """
-        super(TextDecoration, self).__init__()
+        super().__init__()
         self.signals = self.Signals()
         self.draw_order = draw_order
         self.tooltip = tooltip
         self.cursor = QtGui.QTextCursor(cursor_or_bloc_or_doc)
         if full_width:
             self.set_full_width(full_width)
-        if not (start_line is None or start_pos is None or end_line is None
-                or end_pos is None):
-            self.cursor.movePosition(self.cursor.Start,
-                                     self.cursor.MoveAnchor)
+        if start_line is not None or end_line is not None:
+            # If a start or end line is provided, then we calculate from the
+            # start of the text
+            self.cursor.movePosition(self.cursor.Start, self.cursor.MoveAnchor)
         if start_line is not None:
+            # If start_line is provided, move the anchor to the start of that
+            # line
             self.cursor.movePosition(
-                self.cursor.NextBlock,
-                self.cursor.MoveAnchor,
-                start_line
-            )
+                self.cursor.NextBlock, self.cursor.MoveAnchor,
+                start_line)
+            # If start_pos is provided (in addition to start_line), move the
+            # anchor to the correct character within the line.
             if start_pos is not None:
                 self.cursor.movePosition(
-                    self.cursor.NextCharacter,
-                    self.cursor.MoveAnchor,
-                    start_pos
-                )
+                    self.cursor.NextCharacter, self.cursor.MoveAnchor,
+                    start_pos)
         elif start_pos is not None:
+            # If no start_line is provided, but a start_pos is provided, then
+            # we set the anchor to start_pos, which then has an absolute
+            # meaning in terms of characters from the start.
             self.cursor.setPosition(start_pos, self.cursor.MoveAnchor)
         if end_line is not None:
+            # If end_line is provided, move the cursor to the start of that
+            # line while keeping the anchor
             self.cursor.movePosition(
-                self.cursor.NextBlock,
-                self.cursor.KeepAnchor,
-                end_line - start_line
-            )
+                self.cursor.NextBlock, self.cursor.KeepAnchor,
+                end_line - start_line)
         if start_line is not None or end_line is not None:
             if end_pos is not None:
+                # If either a start or an endline is provided, and an end_pos
+                # is also provided, then we move the cursor to the end pos,
+                # while keeping the anchor.
+                print(self.cursor.position())
+                print(self.cursor.block().position())
+                print(self.cursor.positionInBlock())
+                print(f'moving cursor right {end_pos - self.cursor.positionInBlock()} characters')
                 self.cursor.movePosition(
-                    self.cursor.NextCharacter,
-                    self.cursor.KeepAnchor,
-                    end_pos - self.cursor.positionInBlock()
-                )
+                    self.cursor.NextCharacter, self.cursor.KeepAnchor,
+                    end_pos - self.cursor.positionInBlock())
         elif end_pos is not None:
+            # No start or endline was provided, but end_pos is provided,
+            # then we set the anchor to end_pos, which then has an absolute
+            # meanin gin terms of characters from the start.
             self.cursor.setPosition(end_pos, self.cursor.KeepAnchor)
+        print('done!')
         self.character = self.cursor.selectedText()
 
     def contains_cursor(self, cursor, margin=0):
