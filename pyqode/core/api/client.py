@@ -291,11 +291,7 @@ class JsonTcpClient(QtNetwork.QTcpSocket):
         self._header_buf += self.read(4)
         if len(self._header_buf) == 4:
             self._header_complete = True
-            try:
-                header = struct.unpack('=I', self._header_buf)
-            except TypeError:
-                # pyside
-                header = struct.unpack('=I', self._header_buf.data())
+            header = struct.unpack('=I', self._header_buf.data())
             self._to_read = header[0]
             self._header_buf = bytes()
             comm('header content: %d', self._to_read)
